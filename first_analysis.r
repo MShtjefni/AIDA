@@ -1,6 +1,6 @@
 # install.packages("dplyr")
 # library("dplyr")
-# wdir <- "/home/honestus/UNIVERSITÀ/SMD/PROGETTO/data/"
+# wdir <- ""
 load(paste(wdir,"aidat.RData",sep = ""))
 aidat$Ateco <- as.integer(as.character(aidat$Ateco))
 aidat$TaxID <- as.numeric(as.character(aidat$TaxID))
