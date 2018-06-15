@@ -47,3 +47,23 @@ subsectorsGrowth <- function(data) {
   return (data)
 }
 
+
+by_firm <- group_by(food_sector,TaxID, Year)
+by_firm <- summarize(by_firm, Revenue=sum(R))
+
+by_firm$Growth<- NA
+
+#average<-(sum(log10(by_firm$Revenue))/nrow(by_firm))
+for (row in 2:nrow(by_firm)) {
+  if (by_firm[row, "TaxID"] != by_firm[row-1, "TaxID"]) next
+  #if ((by_firm[row, "Year"] - by_firm[row-1, "Year"]) != 1) next
+  by_firm$Growth[row] <- log10(by_firm[row, "Revenue"]) - log10(by_firm[row-1, "Revenue"])
+  #by_firm$Growth[row] <- (log10(by_firm[row, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row, "Year"])]) - (log10(by_firm[row-1, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row-1, "Year"])])
+}
+View(by_firm)
+growth <-  by_firm$Growth[!is.na(by_firm$Growth)]
+growth <- as.numeric(growth)
+mean(growth)
+d <- density(growth) # returns the density data 
+plot(d) # plots the results
+hist(growth, prob=T, breaks="Scott", xlim=c(-1, 1))
