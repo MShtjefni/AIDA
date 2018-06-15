@@ -5,9 +5,8 @@ utilsFile <- "utils.r"
 source(paste(wdir, "utils.r", sep=""))
 loadPackages(paste(wdir,packagesFile,sep = ""))
 
-"Preprocessing steps: changing column types for Ateco(int), TaxID(num), year(int).
-Removing TradingRegion and TradingProvince columns"
-if(!exists aidat) load(paste(wdir,dataFile,sep = ""))
+" Preprocessing steps: changing column types for Ateco(int), TaxID(num), year(int). Removing TradingRegion and TradingProvince columns "
+if(!exists ("aidat")) load(paste(wdir,dataFile,sep = ""))
 aidat$Ateco <- as.integer(as.character(aidat$Ateco))
 aidat$TaxID <- as.numeric(as.character(aidat$TaxID))
 aidat$Year <- as.integer(as.character(aidat$Year))
@@ -41,9 +40,6 @@ riparaz<-[33,34)
 
 
 "Subset of the only manufacturing firms. Adding subsector column"
-manufacturing <- subset(aidat,aidat$Ateco>=101100 & aidat$Ateco<=332009 & aidat$Year>=2007 & aidat$Year<2016) #subset containing all the manufacturing firms from original dataset
-manufacturing <- filter(manufacturing,R>=0 | is.na(R)) #removing all the entries with negative(<0) revenue
-#manufacturing <- arrange(manufacturing,TaxID,Year) #sort manufacturing firms by TaxID and by year
 
 addSubsectorColumn <- function(data) {
   subsectors<-list(subsector=c('alimentari','bevande','tabacco','tessile','confezAbbigl','pelle','legno','carta','stampa', 'fabbrCoke','prodChimici','prodFarm','gomma','minerali','metallurgia','prodMetallo','computer','appElettriche','macchinari','autoveicoli', 'mezziTrasp', 'mobili', 'altreManuf', 'riparaz'), min=c(100000,110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000), max=c(110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000,340000))
@@ -51,6 +47,12 @@ addSubsectorColumn <- function(data) {
   for(i in seq(length(subsectors$subsector))) #mapping subsector to each row based on Ateco
   data$Subsector[data$Ateco>=subsectors$min[i] & data$Ateco<subsectors$max[i]] <- subsectors$subsector[i]
   return (data) }
+
+  manufacturing <- subset(aidat,aidat$Ateco>=101100 & aidat$Ateco<=332009 & aidat$Year>=2007 & aidat$Year<2016) #subset containing all the manufacturing firms from original dataset
+  manufacturing <- addSubsectorColumn(manufacturing)
+  manufacturing <- filter(manufacturing,R>=0 | is.na(R)) #removing all the entries with negative(<0) revenue
+  manufacturingNoMiss <- filter(manufacturing, !is.na(R) & !is.na(E))  # removing all the rows having missing values for Revenue or Employee
+  #manufacturing <- arrange(manufacturing,TaxID,Year) #sort manufacturing firms by TaxID and by year
 
 
 "Useful subsets regarding firms which have missing values for Employee column"
@@ -87,15 +89,15 @@ firmsMissingRevRows <- filter(manufacturing, manufacturing$TaxID %in% missingRev
 
 #### SELECTING ALL THE ROWS OF FIRMS HAVING ALL THE ENTRIES FOR YEARS 2006-2015 ####
 nonMissingRevenues<-filter(manufacturing,! is.na(R)) #removing all the rows having missing values for Revenue
-allConsecutiveTaxID<-group_by(nonMissingRevenues,TaxID) %>%
+nine_years_TaxID<-group_by(nonMissingRevenues,TaxID) %>%
   count()
-allConsecutiveTaxID<-filter(allConsecutiveTaxID,n==9)
-allConsecutiveFirms<-filter(nonMissingRevenues, nonMissingRevenues$TaxID %in% allConsecutiveTaxID$TaxID) %>%
+nine_years_TaxID<-filter(nine_years_TaxID,n==9)
+nine_year_firms<-filter(nonMissingRevenues, nonMissingRevenues$TaxID %in% nine_years_TaxID$TaxID) %>%
 arrange(TaxID,Year) #subset containing only the firms having entries for each year(between 2007 and 2016) and Revenue NOT missing
 
-nonMissingRevEmp<-filter(manufacturing,! is.na(R) & !is.na(E)) # removing all the rows having missing values for Revenue or Employee
-allConsecutiveTaxID<-group_by(nonMissingRevEmp,TaxID) %>%
+
+nine_years_TaxID<-group_by(manufacturingNoMiss,TaxID) %>%
   count()
-allConsecutiveTaxID<-filter(allConsecutiveTaxID,n==9)
-allConsecutiveFirms2<-filter(nonMissingRevEmp, nonMissingRevEmp$TaxID %in% allConsecutiveTaxID$TaxID) %>%
+nine_years_TaxID<-filter(nine_years_TaxID,n==9)
+nine_year_firms2<-filter(manufacturingNoMiss, manufacturingNoMiss$TaxID %in% nine_years_TaxID$TaxID) %>%
 arrange(TaxID,Year) #subset containing only the firms having entries for each year(between 2007 and 2016) with Revenue and Employee NOT missing

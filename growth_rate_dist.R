@@ -1,22 +1,10 @@
 # wdir <- ""
-packagesFile <- "packages.txt"
-dataFile <- "data/aidat.RData"
-utilsFile <- "utils.r"
-source(paste(wdir, "utils.r", sep=""))
-loadPackages(packagesFile)
 
-
-if(!exists aidat) load(paste(wdir,dataFile,sep = ""))
+source(paste(wdir, "first_analysis.r", sep=""))
 #summary(aidat)
-attach(aidat)
-manufacture<-subset(aidat,Ateco>= 101100 & Ateco<=332009 & Year>=2007 & Year<=2015 & R>=0 & !is.na(E))
-manufacture <- manufacture[, -c(3,4,8,9)]
-detach(aidat)
-mfc <- group_by(manufacture, manufacture$TaxID)
-mfc <- summarize(mfc, N_of_Years=n())
-nine_year_firms <- filter(mfc, mfc$N_of_Years ==9)
-nine_year_firms <- filter(manufacture, manufacture$TaxID %in% nine_year_firms$`manufacture$TaxID`)
+
 View(nine_year_firms)
+nine_year_firms$Size = "NA"
 nine_year_firms$Size[nine_year_firms$E <= 49] <- "Small"
 nine_year_firms$Size[50 <= nine_year_firms$E & nine_year_firms$E <= 249] <- "Medium"
 nine_year_firms$Size[nine_year_firms$E >= 250] <- "Large"
@@ -24,7 +12,7 @@ nine_year_firms$Size[nine_year_firms$E >= 250] <- "Large"
 nine_year_firms$R[nine_year_firms$R <=1 ] <- 1
 
 #View(nine_year_firms)
-food_sector <- subset(nine_year_firms, Ateco>=101100 & Ateco <=109200)
+food_sector <- subset(nine_year_firms, Subsector == 'alimentari')
 #View(food_sector)
 by_firm <- group_by(food_sector,TaxID, Year)
 by_firm <- summarize(by_firm, Revenue=sum(R))
