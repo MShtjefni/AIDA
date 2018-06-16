@@ -11,7 +11,7 @@ aidat$Ateco <- as.integer(as.character(aidat$Ateco))
 aidat$TaxID <- as.numeric(as.character(aidat$TaxID))
 aidat$Year <- as.integer(as.character(aidat$Year))
 aidat[which(names(aidat) %in% c("TradingRegion","TradingProvince"))] <- NULL
-inflations <- c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011) #inflations from 2007 to 2017, by ISTAT
+inflactions <- c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011) #inflations from 2007 to 2017, by ISTAT
 aidat$Infl <- NA
 
 #for (i in seq(9)) {aidat$Infl[aidat$Year==2006+i]<-inflations[i]}
@@ -48,7 +48,8 @@ applyInflaction <- function(data, inflactions=c(1, .032, .007, .016, .027, .03, 
     data$Infl <- NA
   for (i in seq(2,9)) {
     inflactions[i]<-(inflactions[i-1]/(1+inflactions[i]))
-    data$Infl[data$Year==2006+i]<-inflations[i]
+    print(inflactions[i])
+    data$Infl[data$Year==2006+i]<-inflactions[i]
   }
   
   data$P <- data$P*data$Infl
