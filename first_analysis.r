@@ -11,6 +11,10 @@ aidat$Ateco <- as.integer(as.character(aidat$Ateco))
 aidat$TaxID <- as.numeric(as.character(aidat$TaxID))
 aidat$Year <- as.integer(as.character(aidat$Year))
 aidat[which(names(aidat) %in% c("TradingRegion","TradingProvince"))] <- NULL
+inflations <- c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011) #inflations from 2007 to 2017, by ISTAT
+aidat$Infl <- NA
+
+#for (i in seq(9)) {aidat$Infl[aidat$Year==2006+i]<-inflations[i]}
 
 "industrieAlim<-[10,11)
 industrieBev<-[11,12)
@@ -37,7 +41,21 @@ mobili<-[31,32)
 altreManuf<-[32,33)
 riparaz<-[33,34)
 "
-
+"Apply inflaction function"
+applyInflaction <- function(data, inflactions=c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011)) {
+  
+  if (!"Infl" %in% colnames(data)) 
+    data$Infl <- NA
+  for (i in seq(2,9)) {
+    inflactions[i]<-(inflactions[i-1]/(1+inflactions[i]))
+    data$Infl[data$Year==2006+i]<-inflations[i]
+  }
+  
+  data$P <- data$P*data$Infl
+  data$R <- data$R*data$Infl
+  data$E <- data$E*data$Infl
+  return(data)
+}
 
 "Subset of the only manufacturing firms. Adding subsector column"
 
@@ -96,8 +114,8 @@ nine_year_firms<-filter(nonMissingRevenues, nonMissingRevenues$TaxID %in% nine_y
 arrange(TaxID,Year) #subset containing only the firms having entries for each year(between 2007 and 2016) and Revenue NOT missing
 
 
-nine_years_TaxID<-group_by(manufacturingNoMiss,TaxID) %>%
+nine_years_TaxID2<-group_by(manufacturingNoMiss,TaxID) %>%
   count()
-nine_years_TaxID<-filter(nine_years_TaxID,n==9)
-nine_year_firms2<-filter(manufacturingNoMiss, manufacturingNoMiss$TaxID %in% nine_years_TaxID$TaxID) %>%
+nine_years_TaxID2<-filter(nine_years_TaxID2,n==9)
+nine_year_firms2<-filter(manufacturingNoMiss, manufacturingNoMiss$TaxID %in% nine_years_TaxID2$TaxID) %>%
 arrange(TaxID,Year) #subset containing only the firms having entries for each year(between 2007 and 2016) with Revenue and Employee NOT missing
