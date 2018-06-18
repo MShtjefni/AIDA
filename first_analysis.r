@@ -1,6 +1,6 @@
 # wdir <- ""
 packagesFile <- "packages.txt"
-dataFile <- "data/aidat.RData"
+#dataFile <- "data/aidat.RData"
 utilsFile <- "utils.r"
 source(paste(wdir, "utils.r", sep=""))
 loadPackages(paste(wdir,packagesFile,sep = ""))
