@@ -79,6 +79,11 @@ singleFirmGrowth <- function(data) {
   return(data)  
 }
 
+library(stats4)
+library(fitdistrplus) # macimum likelihood fitting (excluding laplace dist) 
+library(bbmle) # maximum likelihood fitting with laplace distribution
+library(rmutil) # needed for dlaplace
+
 
 # LL1 <- function(x) {
 #       x1 <- x[1]
