@@ -166,6 +166,21 @@ save(manufacturing, file="manufacturing.RData")
 
 
 
+##### SUMMARY DATASET ####
+manufacturing = get(load("manufacturing.RData"))
+
+#summary
+summary(manufacturing)
+
+#EMPLOYEE
+mean(manufacturing$E)
+min(manufacturing$E)
+max(manufacturing$E)
+median(manufacturing$E)
+sd(manufacturing$E)
+
+
+
 ###### DISTRIBUTION VARIABLES ######
 manufacturing = get(load("manufacturing.RData"))
 summary(manufacturing)
@@ -196,7 +211,6 @@ par(mfrow=c(1,1))
 #Sud->47.043
 tb.geo = table(manufacturing$GeoArea)
 tb.geo = tb.geo[order(tb.geo)]
-tb.geo
 barplot(tb.geo,xlab="Geo Area")
 by.geo = split(manufacturing,manufacturing$GeoArea)
 plot.by.geo = function(x){
@@ -223,37 +237,95 @@ par(mfrow=c(1,1))
 }
 plot.by.geo(by.geo)
 
-
 #VEDIAMO ANCHE LA DISTRIBUZIONE DELLE VARAIBILI CONTINUE E, R, B, P
 library(fitdistrplus)
 library(logspline)
 library(moments)
+library(bbmle)
 # SKEWNESS: MISURA DELLA ASIMMETRIA DI UNA DISTRIBUZIONE
 # kurtosis allontanamento dalla normalità distributiva 
-#leptocurtica > 0: più appuntita di una niormale
-#platicurtica < 0: più piatta di una normale
-#normocustica = 0: piatta come una normale
 R = manufacturing$R
 summary.R = descdist(R, discrete = FALSE)
+#DISTRIBUZIONE NORMALE
+fit.norm <- fitdist(R, "norm")
+fit.norm$estimate
+{
+  n.sims <- 5e4
+  stats <- replicate(n.sims, {      
+    r <- rnorm(n = length(x), mean= fit.norm$estimate[1], sd = fit.norm$estimate[2])
+    as.numeric(ks.test(r, "pnorm", mean= fit.norm$estimate[1], sd = fit.norm$estimate[2])$statistic
+    )      
+  })
+  plot(ecdf(stats), las = 1, main = "KS-test statistic simulation (CDF)", col = "darkorange", lwd = 1.7)
+  grid()
+  fit <- logspline(stats)
+  
+  plogspline(ks.test(x,"pnorm",mean= fit.norm$estimate[1], sd = fit.norm$estimate[2])$statistic
+             , fit
+  )
+}
+#DISTRIBUZIONE WEIBULL
+fit.weibull <- fitdist(R+1, "weibull")
+fit.weibull$estimate
+{
+n.sims <- 5e4
+stats <- replicate(n.sims, {      
+  r <- rweibull(n = length(x), shape= fit.weibull$estimate["shape"], scale = fit.weibull$estimate["scale"])
+  as.numeric(ks.test(r, "pweibull", shape= fit.weibull$estimate["shape"],scale = fit.weibull$estimate["scale"])$statistic
+  )      
+})
+plot(ecdf(stats), las = 1, main = "KS-test statistic simulation (CDF)", col = "darkorange", lwd = 1.7)
+grid()
+fit <- logspline(stats)
 
-fit.norm.R <- fitdist(R+1, "norm")
+plogspline(ks.test(x,"pweibull",shape= fit.weibull$estimate["shape"], scale = fit.weibull$estimate["scale"])$statistic
+               , fit
+)
+}
+#DISTRIBUZIONE LOGNORM
 fit.lnorm.R<-fitdist(R+1,"lnorm")
-fit.pois.R<-fitdist(R,"pois") #errore
-fit.exp.R
-fit.gamma.R
-fit.geom.R
-fit.beta.R
-fit.unif.R
-fit.nbinom.R
-fit.logis.R
-fit.weibull.R <- fitdist(R+1, "weibull")
+fit.lnorm.R$estimate#meanlog=7.097309 -- sdlog=2.671154
+{
+n.sims <- 5e4
+stats <- replicate(n.sims, {   
+  r <- rlnorm(n = length(x), meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2]  )
+  as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic
+  )      
+})
+plot(ecdf(stats), las = 1, main = "KS-test statistic simulation (CDF)", col = "darkorange", lwd = 1.7)
+grid()
+fit <- logspline(stats)
+
+plogspline(ks.test(x,"pweibull",shape= fit.weibull$estimate["shape"], scale = fit.weibull$estimate["scale"])$statistic
+           , fit
+)
+}
 
 
-gofstat(list(fit.lnorm.R,fit.norm.R,fit.weibull.R))
 
 
 
 
+{
+ 
+  
+  #DISTRIBUZIONE WEIBULL
+  fit.weibull.R <- fitdist(R+1, "weibull")
+  fit.weibull.R$estimate
+  #DISTRIBUZIONE ESPONENZIALE
+  LL2 <- function(m) { 
+    -sum(dexp(R, m, log=TRUE))
+  }
+  fit2<-mle2(LL2, start=list(m=0), method = "L-BFGS-B", lower = c(m=0.1), upper = c(m=2))
+  summary(fit2)
+  fit.exp.R<-fitdist(R[R>=0],"exp")
+  fit.gamma.R
+  fit.geom.R
+  fit.beta.R
+  fit.unif.R
+  fit.nbinom.R
+  fit.logis.R
+}
 #istogrammi e density
 {
 par(mfrow=c(4,1))
@@ -329,7 +401,7 @@ summary(manufacturing)
 #effettuiamo la correlazione di pearson per ogni Year
 manufacturing$Year =  as.numeric(as.character(manufacturing$Year))
 
-View(x)
+#View(x)
 x = manufacturing[c("Year","E","R","P","B")]
 
 r<- by(x, x$Year, FUN = function(x) cor(x, use = "pairwise",method = "pearson"))
@@ -370,8 +442,8 @@ plotByYear(x)
 par(mfrow= c(1,1))
 
 #test di ipotesi per correlazione considerando che sono distribuite log-norm.( chiedere a tantari)
-
-
+#least square. la varianza di una delle due è molto più piccola
+#intervalli di confidenza su least square
 #####vecchio#####
 {
 
