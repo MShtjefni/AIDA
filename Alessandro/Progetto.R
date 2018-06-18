@@ -226,14 +226,35 @@ plot.by.geo(by.geo)
 
 #VEDIAMO ANCHE LA DISTRIBUZIONE DELLE VARAIBILI CONTINUE E, R, B, P
 library(fitdistrplus)
+library(logspline)
+library(moments)
+# SKEWNESS: MISURA DELLA ASIMMETRIA DI UNA DISTRIBUZIONE
+# kurtosis allontanamento dalla normalità distributiva 
+#leptocurtica > 0: più appuntita di una niormale
+#platicurtica < 0: più piatta di una normale
+#normocustica = 0: piatta come una normale
 R = manufacturing$R
-E = manufacturing$E
-P = manufacturing$P
-B = manufacturing$B
+summary.R = descdist(R, discrete = FALSE)
 
-descdist(R, discrete = FALSE)
+fit.norm.R <- fitdist(R+1, "norm")
+fit.lnorm.R<-fitdist(R+1,"lnorm")
+fit.pois.R<-fitdist(R,"pois") #errore
+fit.exp.R
+fit.gamma.R
+fit.geom.R
+fit.beta.R
+fit.unif.R
+fit.nbinom.R
+fit.logis.R
+fit.weibull.R <- fitdist(R+1, "weibull")
 
 
+gofstat(list(fit.lnorm.R,fit.norm.R,fit.weibull.R))
+
+
+
+
+#istogrammi e density
 {
 par(mfrow=c(4,1))
 E = manufacturing$E[!is.na(manufacturing$E)]
@@ -272,13 +293,7 @@ length(R)
 R = R[R>0]
 length(R)
 
-fit.weibull <- fitdist(R, "weibull")
-fit.norm <- fitdist(R, "norm")
-fit.lnorm <- fitdist(R,"lnorm")
-fit.unif <- fitdist(R,"unif")
-fit.logis <- fitdist(R,"logis")
 
-gofstat(list(fit.weibull,fit.lnorm,fit.norm,fit.logis))
 
 #bootstrap
 bendo.B = bootdist(fit.lnorm, niter=100)
