@@ -1,9 +1,12 @@
-# wdir <- ""
+#rm(list = ls()) #remove all the existing environment vars
+
 packagesFile <- "packages.txt"
 dataFile <- "data/aidat.RData"
 utilsFile <- "utils.r"
+#print(wdir)
 source(paste(wdir, "utils.r", sep=""))
 loadPackages(paste(wdir,packagesFile,sep = ""))
+
 
 " Preprocessing steps: changing column types for Ateco(int), TaxID(num), year(int). Removing TradingRegion and TradingProvince columns "
 if(!exists ("aidat")) load(paste(wdir,dataFile,sep = ""))
@@ -47,14 +50,14 @@ applyInflaction <- function(data, inflactions=c(1, .032, .007, .016, .027, .03, 
   if (!"Infl" %in% colnames(data)) 
     data$Infl <- NA
   for (i in seq(2,9)) {
-    inflactions[i]<-(inflactions[i-1]/(1+inflactions[i]))
+    inflactions[i]<-(inflactions[i-1]*(1+inflactions[i]))
     print(inflactions[i])
     data$Infl[data$Year==2006+i]<-inflactions[i]
   }
   
-  data$P <- data$P*data$Infl
-  data$R <- data$R*data$Infl
-  data$E <- data$E*data$Infl
+  data$P <- data$P/data$Infl
+  data$R <- data$R/data$Infl
+  data$E <- data$E/mdata$Infl
   return(data)
 }
 
