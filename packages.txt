@@ -1,2 +1,6 @@
 dplyr
 smooth
+stats4
+fitdistrplus
+bbmle
+rmutil

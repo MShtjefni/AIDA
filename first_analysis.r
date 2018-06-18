@@ -1,10 +1,10 @@
 #rm(list = ls()) #remove all the existing environment vars
 
 packagesFile <- "packages.txt"
-dataFile <- "data/aidat.RData"
+#dataFile <- "data/aidat.RData"
 utilsFile <- "utils.r"
 #print(wdir)
-source(paste(wdir, "utils.r", sep=""))
+source(paste(wdir, utilsFile, sep=""))
 loadPackages(paste(wdir,packagesFile,sep = ""))
 
 
