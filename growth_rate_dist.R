@@ -172,4 +172,11 @@ plot(fit4)
 # suitable for our empirical data on the growth rate.
 
 #Further testing with various distribution functions have to be conducted.
+
+hist(x, prob=T, breaks="Scott", xlim=c(-1.5, 1.5), xlab="Growth rate", col="grey", main="Empirical Growth Rate Distribution")
+curve(dlaplace(x,  0.00438608, 0.10486774), add=T, col="blue", lwd=2)
+curve(dcauchy(x, 0.007378846, 0.1091681), add=T,col = "red", lwd=2)
+legend("topright", c("Laplace fit", "Cauchy fit"), col=c("blue", "red"), lwd=3)
+
+gofstat(fit4)
   
