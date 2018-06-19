@@ -254,8 +254,8 @@ library(fExtremes)
 
 
 set.seed(100)
-tax = split(manufacturing,manufacturing$Year)
-R =tax$`2007`$R
+tax = split(manufacturing,manufacturing$TaxID)
+R =tax$`00000210054`$R
 R=R+1
 
 summary.R = descdist(R, discrete = FALSE)
@@ -359,11 +359,13 @@ fit.pois.R$estimate
              , fit
   )
 }
-#DISTRIBUZIONE DI PARETO xi=shape beta=scale parameter
-fit.par.R<-gpdFit(R,type = "mle")
+#DISTRIBUZIONE DI PARETO 
 m_plwords = displ$new(round(R))
 est_plwords = estimate_xmin(m_plwords)
-bs_p = bootstrap_p(m_plwords)   
+m_plwords$setXmin(est_plwords)
+bs_p = bootstrap_p(m_plwords,no_of_sims = 300)   
+bs_p$p
+plot(m_plwords)
 {
   n.sims <- 1000
   stats <- replicate(n.sims, {   
