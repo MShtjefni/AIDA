@@ -1,28 +1,27 @@
 ##### DATASET DESCRIPTION ####
  {
-ls() #controllo le variabili di ambiente
-rm(list = ls()) #rimuoviamo tutte le varaibili d'ambiente
-ls() #controllo se sono state eliminate le variabili d'ambiente
+ls() #Environment
+rm(list = ls()) #remove all variables
+ls() #check varaibles
 
 
-
-#reucpero il dataset completo
 aida = get(load("aidat.RData")) #dataset aida
-#lunghezza del dataset iniziale
-length(rownames(aida)) #lunghezza del dataset 8.397.955 records
+length(rownames(aida)) # 8.397.955 records
 
-#numerosità degli attributi
-length(unique(aida$Ateco[!is.na(aida$Ateco)])) #numero di codici ateco senza NA uguale a  1660
-length(unique(aida$Company[!is.na(aida$Company)])) #1.102.591 aziende differenti
-length(unique(aida$TaxID[!is.na(aida$TaxID)]))#1.266.379 univoci taxID
-length(unique(aida$Form[!is.na(aida$Form)])) #34 forme aziendali distinte
+#numbers of attribute 14
+ncol(aida)
+
+#single value attribute
+length(unique(aida$Ateco[!is.na(aida$Ateco)])) #1.660 ateco code
+length(unique(aida$Company[!is.na(aida$Company)])) #1.102.591 company
+length(unique(aida$TaxID[!is.na(aida$TaxID)]))#1.266.379 firms
+length(unique(aida$Form[!is.na(aida$Form)])) #34 type of firms
 length(unique(aida$Province[!is.na(aida$Province)]))# 110 province
-length(unique(aida$Region[!is.na(aida$Region)]))#20 regioni
-length(unique(aida$Status[!is.na(aida$Status)]))#10 stati attività
-length(unique(aida$Year[!is.na(aida$Year)])) #27 anni di visualizzazione
+length(unique(aida$Region[!is.na(aida$Region)]))#20 regions
+length(unique(aida$Status[!is.na(aida$Status)]))#10 activity states
+length(unique(aida$Year[!is.na(aida$Year)])) #27 years
 
-#gli attributi iniziali sono 14 ma tradingProvince e tradingRegion sono uguali a Province e Ragion
-#eliminiamo gli attributi TradingProvince e TradingRegion in quanto uguali a Region e Province
+#delete attributes TradingProvince and TradingRegion because are equals of Province and Region
 aida$TradingProvince = NULL
 aida$TradingRegion = NULL
 
@@ -37,53 +36,37 @@ aida$GeoArea[aida$Region=="Lazio" |aida$Region=="Marche" |aida$Region=="Toscana"
 #SUD--> Abruzzo, Basilicata, Calabria, Campania, Molise, Puglia, Sardegna, Sicilia
 aida$GeoArea[aida$Region=="Abruzzo" |aida$Region=="Basilicata" |aida$Region=="Calabria" |aida$Region=="Campania" |aida$Region=="Molise" |aida$Region=="Puglia" |aida$Region=="Sardegna" |aida$Region=="Sicilia"  ]= "Sud"
 
+#order dataset by TaxID and Year
 aida =  aida[order(aida$TaxID,aida$Year),]
 
+#save dataset aida
 save(aida, file="aida.RData")
 
 }
 
-##### SAMPLING DATASET MANIFACTURING SECTOR 2007-2016 #####
+##### MANUFACTORING SECTOR FROM 2007 TO 2016 #####
+{
 aida = get(load("aida.RData")) #dataset aida
 
-aida$Infl <- NA
-"Apply inflaction function"
-applyInflaction <- function(data, inflactions=c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011)) {
-  
-  if (!"Infl" %in% colnames(data)) 
-    data$Infl <- NA
-  for (i in seq(2,9)) {
-    inflactions[i]<-(inflactions[i-1]/(1+inflactions[i]))
-    print(inflactions[i])
-    data$Infl[data$Year==2006+i]<-inflactions[i]
-  }
-  
-  data$P <- data$P*data$Infl
-  data$R <- data$R*data$Infl
-  data$E <- data$E*data$Infl
-  return(data)
-}
-
-#PRENDIAMO COME SAMPLE IL SETTORE MANIFATTURIERO
+#MANUFACTORING SCTOR FROM 101100 TO 332009
 aida$Ateco =  as.numeric(as.character(aida$Ateco))
 aida$Year =  as.numeric(as.character(aida$Year))
 manufacturing = subset(aida,Ateco >= 101100 & Ateco <= 332009 & Year>=2007)
-nrow(manufacturing) #1.290.032 records per il settore manifatturiero
+nrow(manufacturing) #1.290.032 records for manufactoring sector
 
 
-# ESSENDO GLI ANNI SBILANCIATI, ABBIAMO DECISO DI SELEZIONARE LE FIRM DAL 2007
-par(mfrow=c(1,2))
+# THE YEARS ARE UNBALANCED
 tb.year = table(manufacturing$Year)
 tb.year = tb.year[order(names(tb.year))]
 barplot(tb.year,xlab = "Year")
-par(mfrow=c(1,1))
+
 
 #SETTORE MANIFATTURIERO  firms with year>=2007
 manufacturing$Year =  as.numeric(as.character(manufacturing$Year))
 manufacturing = subset(manufacturing,R>=0 & E>=0) 
 manufacturing$Year =  as.factor(manufacturing$Year)
 nrow(manufacturing) #1.029.156
-#View(manufacturing)
+
 
 #select firm with year 2007 to 2015 = 9 years of data
 tb = table(manufacturing$TaxID,manufacturing$Year)
@@ -154,32 +137,21 @@ manufacturing$SubSector[manufacturing$Ateco>=330000 & manufacturing$Ateco <35000
 }
 
 
-#SIZE FIRM- SMALL, MEDIUM, BIG
+#SIZE FIRMs - SMALL, MEDIUM, BIG
 manufacturing$Size <- NA
 manufacturing$Size[manufacturing$E <= 49] <- "Small"
 manufacturing$Size[50 <= manufacturing$E & manufacturing$E <= 249] <- "Medium"
-manufacturing$Size[manufacturing$E >= 250] <- "Large"
+manufacturing$Size[manufacturing$E >= 250] <- "Big"
 
-summary(manufacturing)
+
+
+length(unique(manufacturing$TaxID))#42.068 firms
+nrow(manufacturing) #378.612 unique records
 save(manufacturing, file="manufacturing.RData")
 
 
 
-
-##### SUMMARY DATASET ####
-manufacturing = get(load("manufacturing.RData"))
-
-#summary
-summary(manufacturing)
-
-#EMPLOYEE
-mean(manufacturing$E)
-min(manufacturing$E)
-max(manufacturing$E)
-median(manufacturing$E)
-sd(manufacturing$E)
-
-
+}
 
 ###### DISTRIBUTION VARIABLES ######
 {ls() #controllo le variabili di ambiente
@@ -189,13 +161,12 @@ ls() #controllo se sono state eliminate le variabili d'ambiente
 
 manufacturing = get(load("manufacturing.RData"))
 summary(manufacturing)
-#View(manufacturing)
 
-#DISTRIBUZIONE DELLE REGIONI E DELLE PROVINCE PIU NUMEROSE
-#Le regioni con il più alto numero di aziende sono al Nord->Lombardia, Veneto, Emilia Romagna
-#Le province con il più alto numero di aziende sono al Nord-> Milano, Vicenza, Brescia
+#REGIONS AND PROVINCE DISTRIBUTION
+#The regions withe the highest numbers of firms are in the North of Italy Nord->Lombardia, Veneto, Emilia Romagna
+#The provinces with the highest numbers of firms are also in the North of Italy Nord-> Milano, Vicenza, Brescia
 {
-  #regions distribution
+#regions distribution
 par(mfrow=c(2,2))
 tb.region = table(manufacturing$Region)
 tb.region = tb.region[order(tb.region)]
@@ -242,7 +213,9 @@ par(mfrow=c(1,1))
 }
 plot.by.geo(by.geo)
 
-#VEDIAMO ANCHE LA DISTRIBUZIONE DELLE VARAIBILI CONTINUE E, R, B, P
+#WHAT IS THE DISTRIBUTION ABOUT OURS DATA?
+#TEST IPOTESI DELLA DISTRIBUZIONE DELLE VARAIBILI CONTINUE E, R, B, P
+{
 library(fitdistrplus)
 library(logspline)
 library(moments)
@@ -252,34 +225,47 @@ library(VGAM)
 library(poweRlaw)
 library(fExtremes)
 
+#for the sample, we can take the ateco code.
+tb.ateco = table(manufacturing$Ateco)
+tb.ateco
+#REVENUE distribution and test
 
-set.seed(100)
-tax = split(manufacturing,manufacturing$TaxID)
-R =tax$`00000210054`$R
+ateco = split(manufacturing,manufacturing$Ateco)
+R = ateco$`104000`$R
 R=R+1
+descdist(R, discrete = FALSE)
 
-summary.R = descdist(R, discrete = FALSE)
 #DISTRIBUZIONE NORMALE
-fit.norm.R <-fitdistr(R, densfun="normal")
+fit.norm.R <-fitdist(R, "norm",method = c("mle"))
+plot(fit.norm.R)
 fit.norm.R$estimate
+fit.norm.R$aic
+
+#per la verifica di ipotesi
+
+#ests <-bootdist(fit.norm.R, niter = 1e3)
+#plot(ests)
+#ests$estim
 {
-  n.sims <- 1000
+  n.sims <- 100
   stats <- replicate(n.sims, {      
-    r <- rnorm(n = length(R), mean = fit.norm.R$estimate[1], sd = fit.norm.R$estimate[2])
-    as.numeric(ks.test(r, "pnorm", mean= fit.norm.R$estimate[1], sd = fit.norm.R$estimate[2])$statistic
+    r <- rnorm(n = length(R), mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])
+    as.numeric(ks.test(r, "pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic
     )      
   })
   
   fit <- logspline(stats)
-  plogspline(ks.test(R,"pnorm",mean= fit.norm.R$estimate[1], sd = fit.norm.R$estimate[2])$statistic
+  plogspline(ks.test(R,"pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic
              , fit
   )
 }
 #DISTRIBUZIONE WEIBULL
-fit.weibull.R <- fitdistr(R, densfun = "weibull")
+fit.weibull.R <- fitdist(R, "weibull",method = c("mle"))
+plot(fit.weibull.R)
 fit.weibull.R$estimate
+fit.weibull.R$aic
 {
-n.sims <- 1000
+n.sims <- 100
 stats <- replicate(n.sims, {      
   r <- rweibull(n = length(R), shape= fit.weibull.R$estimate["shape"], scale = fit.weibull.R$estimate["scale"])
   as.numeric(ks.test(r, "pweibull", shape= fit.weibull.R$estimate["shape"],scale = fit.weibull.R$estimate["scale"])$statistic
@@ -292,8 +278,10 @@ plogspline(ks.test(R,"pweibull",shape= fit.weibull.R$estimate["shape"], scale = 
 )
 }
 #DISTRIBUZIONE LOGNORM
-fit.lnorm.R<-fitdistr(R,densfun = "log-normal")
+fit.lnorm.R<-fitdist(R,"lnorm",method = c("mle"))
+plot(fit.lnorm.R)
 fit.lnorm.R$estimate#meanlog=7.097309 -- sdlog=2.671154
+fit.lnorm.R$aic
 {
 n.sims <- 1000
 stats <- replicate(n.sims, {   
@@ -309,8 +297,10 @@ plogspline(ks.test(R,"plnorm",meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.ln
 )
 }
 #DISTRIBUZIONE UNIFORME
-fit.unif.R<-fitdist(R,"pareto")
+fit.unif.R<-fitdist(R,"unif")
+plot(fit.unif.R)
 fit.unif.R$estimate
+fit.unif.R$aic
 {
   n.sims <- 1000
   stats <- replicate(n.sims, {   
@@ -326,8 +316,10 @@ fit.unif.R$estimate
   )
 }
 #DISTRIBUZIONE ESPONENZIALE
-fit.exp.R<-fitdistr(R,densfun ="exponential")
+fit.exp.R<-fitdist(R,"exp")
+plot(fit.exp.R)
 fit.exp.R$estimate
+fit.exp.R$aic
 {
   n.sims <- 1000
   stats <- replicate(n.sims, {   
@@ -343,8 +335,9 @@ fit.exp.R$estimate
   )
 }
 #DISTRIBUZIONE POISSON
-fit.pois.R<-fitdistr(R, densfun="poisson")
+fit.pois.R<-fitdistr(R+1, densfun="poisson")
 fit.pois.R$estimate
+AIC(fit.pois.R)
 {
   n.sims <- 1000
   stats <- replicate(n.sims, {   
@@ -359,11 +352,28 @@ fit.pois.R$estimate
              , fit
   )
 }
+#LAPLACE
+m = median(R)
+t = mean(abs(R-m))
+{
+  n.sims <- 1000
+  stats <- replicate(n.sims, {   
+    r <- rlaplace(n = length(R), location = m,scale = t )
+    as.numeric(ks.test(r, "plaplace", location = m,scale = t)$statistic)      
+  })
+  
+  fit <- logspline(stats)
+  
+  plogspline(ks.test(R,"plaplace",location = m,scale = t)$statistic,fit)
+}
+
+
 #DISTRIBUZIONE DI PARETO 
 m_plwords = displ$new(round(R))
 est_plwords = estimate_xmin(m_plwords)
-m_plwords$setXmin(est_plwords)
-bs_p = bootstrap_p(m_plwords,no_of_sims = 300)   
+m_plwords$setXmin(est_plwords$xmin)
+m_plwords$setPars(est_plwords$pars)
+bs_p = bootstrap_p(m_plwords,no_of_sims = 100,threads = 4)   
 bs_p$p
 plot(m_plwords)
 {
@@ -380,17 +390,43 @@ plot(m_plwords)
              , fit
   )
 }
+
+#GAMMA
+fit.gamma.R<-fitdist(R,"gamma")
+fit.gamma.R$estimate
+fit.gamma.R$aic 
+
+#beta
+fit.beta.R<-fitdist(R,"beta")
+
+}
+
 #istogrammi e density
-
 {
-par(mfrow=c(4,1))
-E = manufacturing$E[!is.na(manufacturing$E)]
-hist(log(E),prob=TRUE,main = "Distribution of Employee",breaks=20)
-lines(density(log(E)))
+par(mfrow=c(seq(2,2),2))
+E=manufacturing[manufacturing$Size=="Small",]
+E = E$E
+bw <- diff(range(E)) / (2 * IQR(E) / length(E)^(1/3))
+hist(E,freq=FALSE,main = "Distribution of Employee")
+lines(density(E),col="blue")
 
-R = manufacturing$R[!is.na(manufacturing$R)]
-hist(log(R),prob=TRUE,main = "Distribution of Revenue",breaks = 20)
-lines(density(log(R)))
+E=manufacturing[manufacturing$Size=="Medium",]
+E = E$E
+hist(E,freq=FALSE,main = "Distribution of Employee", breaks=c(50,65,77,90,130,170,210,240,270))
+lines(density(E),col="red")
+
+E=manufacturing[manufacturing$Size=="Large",]
+E = E$E
+
+hist(E,freq=TRUE,main = "Distribution of Employee", breaks=33000)
+lines(density(E),col="green")
+
+
+
+R = manufacturing$R.norm
+R
+hist(R,freq=TRUE,main = "Distribution of Revenue",breaks = c(-2,-1,2,10,80,120,160,200))
+lines(density(R))
 
 
 P = manufacturing$P[!is.na(manufacturing$P)]
@@ -409,8 +445,7 @@ par(mfrow=c(1,1))
 
 ###### CORRELATION ANALYSIS #####
 manufacturing = get(load("/Users/alessandroarmillotta/Desktop/Statistica/Progetto/Progetto_aida_2/manufacturing.RData")) #dataset aida
-View(manufacturing)
-summary(manufacturing)
+
 
 #effettuiamo la correlazione di pearson per ogni Year
 manufacturing$Year =  as.numeric(as.character(manufacturing$Year))
