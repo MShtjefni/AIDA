@@ -1,4 +1,7 @@
 ##### DATASET DESCRIPTION ####
+#The dataset is long 8.397.955 records with 14 variables. 
+#The varaibles are:
+#Ateco: ateco code which indicates the firm sector
  {
 ls() #Environment
 rm(list = ls()) #remove all variables
@@ -152,13 +155,11 @@ save(manufacturing, file="manufacturing.RData")
 
 
 }
-
 ###### DISTRIBUTION VARIABLES ######
 {ls() #controllo le variabili di ambiente
 rm(list = ls()) #rimuoviamo tutte le varaibili d'ambiente
 ls() #controllo se sono state eliminate le variabili d'ambiente
 }
-
 manufacturing = get(load("manufacturing.RData"))
 summary(manufacturing)
 
@@ -214,7 +215,32 @@ par(mfrow=c(1,1))
 plot.by.geo(by.geo)
 
 #WHAT IS THE DISTRIBUTION ABOUT OURS DATA?
-#TEST IPOTESI DELLA DISTRIBUZIONE DELLE VARAIBILI CONTINUE E, R, B, P
+#Ting Ting Chen and Tetsuya Takaishi in the 2nd International Conference on Mathematical Modeling in Physical Sciences 
+#claim that Firm size data usually do not show the normality that is often assumed in statistical analysis 
+#such as regression analysis. Firm size data are important variables to find relationships among financial indicators. 
+#However it is well-known that firm size data are not normally distributed and often suggested to follow a log-normal distribution.
+#In this study they focus on two firm size data: the number of employees and sale. 
+#Those data deviate considerably from a normal distribution. To improve the normality of those data they transform them by the Box-Cox transformation 
+#with appropriate parameters. It is found that the two firm size data transformed by the Box-Cox 
+#transformation show strong linearity. This indicates that the number of employees and sale have the 
+#similar property as a firm size indicator.
+
+#Now we start analyze our distribution and after we can test the Box Cox trasformation
+#TEST IPOTESI DELLA DISTRIBUZIONE DELLE VARAIBILI CONTINUE E, R
+#distribution and test hypotesis of R
+{
+tb.ateco = table(manufacturing$Ateco)
+ateco = split(manufacturing,manufacturing$Ateco)
+R = ateco$`104000`$R
+R = manufacturing$R
+E = ateco$`104000`$E
+#distribution for E and R
+par(mfrow=c(2,1))
+descdist(R, discrete = FALSE,obs.col="red", boot=10000,obs.pch = 15, boot.col="blue")
+descdist(E, discrete = FALSE,obs.col="red", boot=10000,obs.pch = 15, boot.col="green")
+par(mfrow=c(1,1))
+#for firms size R and E the distribution with bootstrap is near a beta distribution. For the evaluation, 
+#we use p-value and AIC. Usualy in this samples, the p-value is always high
 {
 library(fitdistrplus)
 library(logspline)
@@ -225,15 +251,10 @@ library(VGAM)
 library(poweRlaw)
 library(fExtremes)
 
-#for the sample, we can take the ateco code.
-tb.ateco = table(manufacturing$Ateco)
-tb.ateco
-#REVENUE distribution and test
 
-ateco = split(manufacturing,manufacturing$Ateco)
-R = ateco$`104000`$R
-R=R+1
-descdist(R, discrete = FALSE)
+
+
+
 
 #DISTRIBUZIONE NORMALE
 fit.norm.R <-fitdist(R, "norm",method = c("mle"))
@@ -400,6 +421,8 @@ fit.gamma.R$aic
 fit.beta.R<-fitdist(R,"beta")
 
 }
+}
+#distribution and test hypotesis of E
 
 #istogrammi e density
 {
