@@ -1,4 +1,4 @@
-wdir <- ""
+#wdir <- ""
 source(paste(wdir, "first_analysis.r", sep=""))
 
 View(nine_year_firms2)

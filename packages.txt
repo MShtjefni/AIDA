@@ -1,6 +1,6 @@
 dplyr
-smooth
+smooth  
 stats4
 fitdistrplus
 bbmle
-rmutil
+rmutil 
