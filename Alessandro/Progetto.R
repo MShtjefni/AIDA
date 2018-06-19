@@ -182,9 +182,14 @@ sd(manufacturing$E)
 
 
 ###### DISTRIBUTION VARIABLES ######
+{ls() #controllo le variabili di ambiente
+rm(list = ls()) #rimuoviamo tutte le varaibili d'ambiente
+ls() #controllo se sono state eliminate le variabili d'ambiente
+}
+
 manufacturing = get(load("manufacturing.RData"))
 summary(manufacturing)
-View(manufacturing)
+#View(manufacturing)
 
 #DISTRIBUZIONE DELLE REGIONI E DELLE PROVINCE PIU NUMEROSE
 #Le regioni con il più alto numero di aziende sono al Nord->Lombardia, Veneto, Emilia Romagna
@@ -242,91 +247,139 @@ library(fitdistrplus)
 library(logspline)
 library(moments)
 library(bbmle)
-# SKEWNESS: MISURA DELLA ASIMMETRIA DI UNA DISTRIBUZIONE
-# kurtosis allontanamento dalla normalità distributiva 
-R = manufacturing$R
+library(actuar)
+library(VGAM)
+library(poweRlaw)
+library(fExtremes)
+
+
+set.seed(100)
+tax = split(manufacturing,manufacturing$Year)
+R =tax$`2007`$R
+R=R+1
+
 summary.R = descdist(R, discrete = FALSE)
 #DISTRIBUZIONE NORMALE
-fit.norm <- fitdist(R, "norm")
-fit.norm$estimate
+fit.norm.R <-fitdistr(R, densfun="normal")
+fit.norm.R$estimate
 {
-  n.sims <- 5e4
+  n.sims <- 1000
   stats <- replicate(n.sims, {      
-    r <- rnorm(n = length(x), mean= fit.norm$estimate[1], sd = fit.norm$estimate[2])
-    as.numeric(ks.test(r, "pnorm", mean= fit.norm$estimate[1], sd = fit.norm$estimate[2])$statistic
+    r <- rnorm(n = length(R), mean = fit.norm.R$estimate[1], sd = fit.norm.R$estimate[2])
+    as.numeric(ks.test(r, "pnorm", mean= fit.norm.R$estimate[1], sd = fit.norm.R$estimate[2])$statistic
     )      
   })
-  plot(ecdf(stats), las = 1, main = "KS-test statistic simulation (CDF)", col = "darkorange", lwd = 1.7)
-  grid()
-  fit <- logspline(stats)
   
-  plogspline(ks.test(x,"pnorm",mean= fit.norm$estimate[1], sd = fit.norm$estimate[2])$statistic
+  fit <- logspline(stats)
+  plogspline(ks.test(R,"pnorm",mean= fit.norm.R$estimate[1], sd = fit.norm.R$estimate[2])$statistic
              , fit
   )
 }
 #DISTRIBUZIONE WEIBULL
-fit.weibull <- fitdist(R+1, "weibull")
-fit.weibull$estimate
+fit.weibull.R <- fitdistr(R, densfun = "weibull")
+fit.weibull.R$estimate
 {
-n.sims <- 5e4
+n.sims <- 1000
 stats <- replicate(n.sims, {      
-  r <- rweibull(n = length(x), shape= fit.weibull$estimate["shape"], scale = fit.weibull$estimate["scale"])
-  as.numeric(ks.test(r, "pweibull", shape= fit.weibull$estimate["shape"],scale = fit.weibull$estimate["scale"])$statistic
+  r <- rweibull(n = length(R), shape= fit.weibull.R$estimate["shape"], scale = fit.weibull.R$estimate["scale"])
+  as.numeric(ks.test(r, "pweibull", shape= fit.weibull.R$estimate["shape"],scale = fit.weibull.R$estimate["scale"])$statistic
   )      
 })
-plot(ecdf(stats), las = 1, main = "KS-test statistic simulation (CDF)", col = "darkorange", lwd = 1.7)
-grid()
-fit <- logspline(stats)
 
-plogspline(ks.test(x,"pweibull",shape= fit.weibull$estimate["shape"], scale = fit.weibull$estimate["scale"])$statistic
+fit <- logspline(stats)
+plogspline(ks.test(R,"pweibull",shape= fit.weibull.R$estimate["shape"], scale = fit.weibull.R$estimate["scale"])$statistic
                , fit
 )
 }
 #DISTRIBUZIONE LOGNORM
-fit.lnorm.R<-fitdist(R+1,"lnorm")
+fit.lnorm.R<-fitdistr(R,densfun = "log-normal")
 fit.lnorm.R$estimate#meanlog=7.097309 -- sdlog=2.671154
 {
-n.sims <- 5e4
+n.sims <- 1000
 stats <- replicate(n.sims, {   
-  r <- rlnorm(n = length(x), meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2]  )
+  r <- rlnorm(n = length(R), meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2]  )
   as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic
   )      
 })
-plot(ecdf(stats), las = 1, main = "KS-test statistic simulation (CDF)", col = "darkorange", lwd = 1.7)
-grid()
+
 fit <- logspline(stats)
 
-plogspline(ks.test(x,"pweibull",shape= fit.weibull$estimate["shape"], scale = fit.weibull$estimate["scale"])$statistic
+plogspline(ks.test(R,"plnorm",meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic
            , fit
 )
 }
-
-
-
-
-
-
+#DISTRIBUZIONE UNIFORME
+fit.unif.R<-fitdist(R,"pareto")
+fit.unif.R$estimate
 {
- 
+  n.sims <- 1000
+  stats <- replicate(n.sims, {   
+    r <- runif(n = length(R), min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2]  )
+    as.numeric(ks.test(r, "punif", min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2])$statistic
+    )      
+  })
   
-  #DISTRIBUZIONE WEIBULL
-  fit.weibull.R <- fitdist(R+1, "weibull")
-  fit.weibull.R$estimate
-  #DISTRIBUZIONE ESPONENZIALE
-  LL2 <- function(m) { 
-    -sum(dexp(R, m, log=TRUE))
-  }
-  fit2<-mle2(LL2, start=list(m=0), method = "L-BFGS-B", lower = c(m=0.1), upper = c(m=2))
-  summary(fit2)
-  fit.exp.R<-fitdist(R[R>=0],"exp")
-  fit.gamma.R
-  fit.geom.R
-  fit.beta.R
-  fit.unif.R
-  fit.nbinom.R
-  fit.logis.R
+  fit <- logspline(stats)
+  
+  plogspline(ks.test(R,"punif",min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2])$statistic
+             , fit
+  )
+}
+#DISTRIBUZIONE ESPONENZIALE
+fit.exp.R<-fitdistr(R,densfun ="exponential")
+fit.exp.R$estimate
+{
+  n.sims <- 1000
+  stats <- replicate(n.sims, {   
+    r <- rexp(n = length(R), rate = fit.exp.R$estimate[1]  )
+    as.numeric(ks.test(r, "pexp", rate = fit.exp.R$estimate[1])$statistic
+    )      
+  })
+  
+  fit <- logspline(stats)
+  
+  plogspline(ks.test(R,"pexp",rate = fit.exp.R$estimate[1] )$statistic
+             , fit
+  )
+}
+#DISTRIBUZIONE POISSON
+fit.pois.R<-fitdistr(R, densfun="poisson")
+fit.pois.R$estimate
+{
+  n.sims <- 1000
+  stats <- replicate(n.sims, {   
+    r <- rpois(n = length(R), lambda = fit.pois.R$estimate[1] )
+    as.numeric(ks.test(r, "ppois", lambda = fit.pois.R$estimate[1])$statistic
+    )      
+  })
+  
+  fit <- logspline(stats)
+  
+  plogspline(ks.test(R,"ppois",lambda = fit.pois.R$estimate[1])$statistic
+             , fit
+  )
+}
+#DISTRIBUZIONE DI PARETO xi=shape beta=scale parameter
+fit.par.R<-gpdFit(R,type = "mle")
+m_plwords = displ$new(round(R))
+est_plwords = estimate_xmin(m_plwords)
+bs_p = bootstrap_p(m_plwords)   
+{
+  n.sims <- 1000
+  stats <- replicate(n.sims, {   
+    r <- rpareto(n = length(R), scale=scale ,shape = shape)
+    as.numeric(ks.test(r, "ppareto", scale=scale ,shape = shape)$statistic
+    )      
+  })
+  
+  fit <- logspline(stats)
+  
+  plogspline(ks.test(R,"ppareto",scale=4.013177e+04 ,shape = 7.342282e-01)$statistic
+             , fit
+  )
 }
 #istogrammi e density
+
 {
 par(mfrow=c(4,1))
 E = manufacturing$E[!is.na(manufacturing$E)]
@@ -349,47 +402,6 @@ hist(log(B),prob=TRUE,main = "Distribution of EBIDTA",breaks = 20)
 lines(density(log(B)))
 par(mfrow=c(1,1))
 }
-
-
-
-
-#COME FACCIO A FARE  UN TEST SULLA DISTRIBUZIONE?
-{
-library(fitdistrplus)
-library(forecast)
-library(psych)
-library(goft)
-
-R = manifacturing$R[!is.na(manifacturing$R)]
-length(R)
-R = R[R>0]
-length(R)
-
-
-
-#bootstrap
-bendo.B = bootdist(fit.lnorm, niter=100)
-summary(bendo.B)
-plot(bendo.B)
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
