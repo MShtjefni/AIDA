@@ -155,7 +155,7 @@ save(manufacturing, file="manufacturing.RData")
 
 
 }
-###### DISTRIBUTION VARIABLES ######
+###### VARIABLES DISTRIBUTION  ######
 #delete environment
 {ls() #controllo le variabili di ambiente
 rm(list = ls()) #rimuoviamo tutte le varaibili d'ambiente
@@ -163,6 +163,10 @@ ls() #controllo se sono state eliminate le variabili d'ambiente
 }
 manufacturing = get(load("manufacturing.RData"))
 summary(manufacturing)
+#View(manufacturing)
+manufacturing$R = manufacturing$R+1
+manufacturing$E = manufacturing$E+1
+
 
 #REGIONS AND PROVINCE DISTRIBUTION
 #The regions with the highest numbers of firms are in the North of Italy Nord->Lombardia with 12940, Veneto with 5840 firms and Emilia Romagna with 4989 firms
@@ -238,12 +242,14 @@ plot.by.geo(by.geo)
 #Now we start analyze our distribution and after we can test the Box Cox trasformation
 #TEST IPOTESI DELLA DISTRIBUZIONE DELLE VARAIBILI CONTINUE E, R
 
-#istogrammi e density
+#Histograms e density
 {
   par(mfrow=c(2,2))
   ateco = split(manufacturing,manufacturing$Ateco)
   R = ateco$`101100`$R #potrebbe essere una distribuzione gamma, poisson o weibull
   E = ateco$`101100`$E # potrebbe essere una distribuzione gamma, poissona o weibull
+  
+  
   
   hist(R,freq=FALSE,main = "Revenue Distribution",breaks = 20,xlab = "Revenue")
   lines(density(R),col = "red")
@@ -259,343 +265,6 @@ plot.by.geo(by.geo)
   par(mfrow=c(1,1))
 }
 
-#distribution and hypotesis test for total R and total E
-{
-  
-  
-  #R maybe is close to BETA distribution with some sample of bootstrap in GAMMA distribution
-  #E maybe is close to gamma distribution
-  # For the evaluation,  we use p-value and AIC. Usualy in this samples, the p-value is always high and the AIC 
-  #is the best fits value.  We test: 
-  #Normal Distribution : 
-  #LogNormal Distribution 
-  #Gamma Distribution :
-  #Beta distribution : 
-  
-  #without box-cox transformation
-  #R distribution is Beta Distribuited
-  #E distribution
-  {
-    R = manufacturing$R
-    E = manufacturing$E
-    #distribution for E and R
-    par(mfrow=c(2,1))
-    descdist(R, discrete = FALSE,obs.col="red", boot=100,obs.pch = 15, boot.col="blue")
-    descdist(E, discrete = FALSE,obs.col="red", boot=100,obs.pch = 15, boot.col="green")
-    par(mfrow=c(1,1))
-    
-  #DISTRIBUZIONE NORMALE 
-  # R: mean = 13213.56, sd=133312.64  , AIC: 10.010.044
-  {
-  fit.norm.R <-fitdist(R, "norm",method = c("mle"))
-  #plot(fit.norm.R)
-  fit.norm.R$estimate
-  fit.norm.R$aic
-  n.sims <- 100
-  stats <- replicate(n.sims, {      
-    r <- rnorm(n = length(R), mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])
-    as.numeric(ks.test(r, "pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic
-    )      
-  })
-  fit <- logspline(stats)
-  plogspline(ks.test(R,"pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic, fit)
-  }
-  # E: mean = 38.65826, sd=207.28282  , AIC: 5.113.555
-  {
-    fit.norm.E <-fitdist(E, "norm",method = c("mle"))
-    #plot(fit.norm.E)
-    fit.norm.E$estimate
-    fit.norm.E$aic
-    n.sims <- 100
-    stats <- replicate(n.sims, {      
-      r <- rnorm(n = length(E), mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])
-      as.numeric(ks.test(r, "pnorm", mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])$statistic
-      )      
-    })
-    fit <- logspline(stats)
-    plogspline(ks.test(E,"pnorm", mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])$statistic, fit)
-  }
-  
-  #DISTRIBUZIONE LOGNORM
-  # R: meanlog=7.097309, sdlog=2.671154  , AIC = 7.192.692
-  {
-  fit.lnorm.R<-fitdist(R+1,"lnorm",method = c("mle"))
-  #plot(fit.lnorm.R)
-  fit.lnorm.R$estimate
-  fit.lnorm.R$aic
-  
-  n.sims <- 100
-  stats <- replicate(n.sims, {   
-    r <- rlnorm(n = length(R), meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2]  )
-    as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic
-    )      
-  })
-
-  fit <- logspline(stats)
-
-  plogspline(ks.test(R,"plnorm",meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic, fit)
-  }
-  # E: meanlog=-2.316315 , sdlog=1.569184   , AIC = 3.169.600
-  {
-    fit.lnorm.E<-fitdist(E+1,"lnorm",method = c("mle"))
-    #plot(fit.lnorm.E)
-    fit.lnorm.E$estimate
-    fit.lnorm.E$aic
-    
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rlnorm(n = length(E), meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2]  )
-      as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    
-    plogspline(ks.test(E,"plnorm",meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2])$statistic, fit)
-  }
-
-  #GAMMA DISTRIBUTION
-  # R: shape=0.2501059 ,rate=431.5276096 , AIC= -5.829.999
-  {
-  R.norm = R
-  fit.gamma.R<-fitdist(R.norm,"gamma",method = c("mle"),lower=0,upper=1)
-  #plot(fit.gamma.R)
-  fit.gamma.R$estimate
-  fit.gamma.R$aic
-  n.sims <- 10
-  stats <- replicate(n.sims, {   
-    r <- rgamma(n = length(R.norm), shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2]  )
-    as.numeric(ks.test(r, "pgamma", shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2])$statistic
-    )      
-  })
-  
-  fit <- logspline(stats)
-  
-  plogspline(ks.test(R.norm,"pgamma",shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2])$statistic, fit)
-  
-  
-  }
-  # E: shape=0.2625213 ,rate=228.2919192, AIC =  -5.223.628
-  {
-    E.norm <- E
-    fit.gamma.E<-fitdist(E.norm,"gamma",method = c("mle"))
-    #plot(fit.gamma.R)
-    fit.gamma.E$estimate
-    fit.gamma.E$aic
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rgamma(n = length(E.norm), shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2]  )
-      as.numeric(ks.test(r, "pgamma", shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    plogspline(ks.test(E.norm,"pgamma",shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2])$statistic, fit)
-    
-    
-  }
-  
-  #BETA
-  # R: shape1 = 0.2397152, shape2 = 358.7267210 , AIC= -5.803.650
-  {
-  R.norm <- R
-  fit.beta.R<-fitdist(R.norm,"beta")
-  fit.beta.R$estimate
-  fit.beta.R$aic
-  
-  n.sims <- 10
-  stats <- replicate(n.sims, {   
-    r <- rbeta(n = length(R.norm), shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2]  )
-    as.numeric(ks.test(r, "pbeta", shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2])$statistic
-    )      
-  })
-  
-  fit <- logspline(stats)
-  plogspline(ks.test(R.norm,"pbeta",shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2])$statistic, fit)
-  
-  
-  }
-  # E: shape1 = 0.257029 , shape2 = 209.469943   , AIC = -5.211.078 
-  {
-    E.norm <- E
-    fit.beta.E<-fitdist(E.norm,"beta")
-    fit.beta.E$estimate
-    fit.beta.E$aic
-    
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rbeta(n = length(E.norm), shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2]  )
-      as.numeric(ks.test(r, "pbeta", shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    plogspline(ks.test(E.norm,"pbeta",shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2])$statistic, fit)
-    
-    
-  }
-
-  }
-  
-  #with box-cox transformation
-  {
-  R = boxcoxnc(manufacturing$R,lambda2 = 1)
-  E = boxcoxnc(manufacturing$E,lambda2 = 1)
-  
-  #DISTRIBUZIONE NORMALE (i valori sono normalizzati [0,1])
-  # R: mean = 0.0005793282, sd=.0058448883 , AIC: -2.819.330
-  {
-    fit.norm.R <-fitdist(R, "norm",method = c("mle"))
-    #plot(fit.norm.R)
-    fit.norm.R$estimate
-    fit.norm.R$aic
-    n.sims <- 100
-    stats <- replicate(n.sims, {      
-      r <- rnorm(n = length(R), mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])
-      as.numeric(ks.test(r, "pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic
-      )      
-    })
-    fit <- logspline(stats)
-    plogspline(ks.test(R,"pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic, fit)
-  }
-  # E: mean = 0.001149342, sd=0.006162528 , AIC: -2.779.258
-  {
-    fit.norm.E <-fitdist(E, "norm",method = c("mle"))
-    #plot(fit.norm.E)
-    fit.norm.E$estimate
-    fit.norm.E$aic
-    n.sims <- 100
-    stats <- replicate(n.sims, {      
-      r <- rnorm(n = length(E), mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])
-      as.numeric(ks.test(r, "pnorm", mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])$statistic
-      )      
-    })
-    fit <- logspline(stats)
-    plogspline(ks.test(E,"pnorm", mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])$statistic, fit)
-  }
-  
-  #DISTRIBUZIONE LOGNORM
-  # R: meanlog=-10.293819, sdlog=4.040119 , AIC = -5.662.976
-  {
-    fit.lnorm.R<-fitdist(R,"lnorm",method = c("mle"))
-    #plot(fit.lnorm.R)
-    fit.lnorm.R$estimate
-    fit.lnorm.R$aic
-    
-    n.sims <- 100
-    stats <- replicate(n.sims, {   
-      r <- rlnorm(n = length(R), meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2]  )
-      as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    
-    plogspline(ks.test(R,"plnorm",meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic, fit)
-  }
-  # E: meanlog=-9.453188 , sdlog=3.893421  , AIC = -5.054.437
-  {
-    fit.lnorm.E<-fitdist(E,"lnorm",method = c("mle"))
-    #plot(fit.lnorm.E)
-    fit.lnorm.E$estimate
-    fit.lnorm.E$aic
-    
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rlnorm(n = length(E), meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2]  )
-      as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    
-    plogspline(ks.test(E,"plnorm",meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2])$statistic, fit)
-  }
-  
-  #GAMMA DISTRIBUTION
-  # R: shape=0.2501059 ,rate=431.5276096 , AIC= -5.829.999
-  {
-    R.norm = R
-    fit.gamma.R<-fitdist(R.norm,"gamma",method = c("mle"))
-    #plot(fit.gamma.R)
-    fit.gamma.R$estimate
-    fit.gamma.R$aic
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rgamma(n = length(R.norm), shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2]  )
-      as.numeric(ks.test(r, "pgamma", shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    
-    plogspline(ks.test(R.norm,"pgamma",shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2])$statistic, fit)
-    
-    
-  }
-  # E: shape=0.2625213 ,rate=228.2919192, AIC =  -5.223.628
-  {
-    E.norm <- E
-    fit.gamma.E<-fitdist(E.norm,"gamma",method = c("mle"))
-    #plot(fit.gamma.R)
-    fit.gamma.E$estimate
-    fit.gamma.E$aic
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rgamma(n = length(E.norm), shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2]  )
-      as.numeric(ks.test(r, "pgamma", shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    plogspline(ks.test(E.norm,"pgamma",shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2])$statistic, fit)
-    
-    
-  }
-  
-  #BETA
-  # R: shape1 = 0.2397152, shape2 = 358.7267210 , AIC= -5.803.650
-  {
-    R.norm <- R
-    fit.beta.R<-fitdist(R.norm,"beta")
-    fit.beta.R$estimate
-    fit.beta.R$aic
-    
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rbeta(n = length(R.norm), shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2]  )
-      as.numeric(ks.test(r, "pbeta", shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    plogspline(ks.test(R.norm,"pbeta",shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2])$statistic, fit)
-    
-    
-  }
-  # E: shape1 = 0.257029 , shape2 = 209.469943   , AIC = -5.211.078 
-  {
-    E.norm <- E
-    fit.beta.E<-fitdist(E.norm,"beta")
-    fit.beta.E$estimate
-    fit.beta.E$aic
-    
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rbeta(n = length(E.norm), shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2]  )
-      as.numeric(ks.test(r, "pbeta", shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    plogspline(ks.test(E.norm,"pbeta",shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2])$statistic, fit)
-    
-    
-  }
-  
-}
-
-}
 
 #distribution and hypotesis test for R and E of 101100
 {
@@ -609,170 +278,173 @@ plot.by.geo(by.geo)
   library(fExtremes)
   library(AID)
   ateco = split(manufacturing,manufacturing$Ateco)
-  R = ateco$`101100`$R
-  E = ateco$`101100`$E
+  R = ateco$`222900`$R
+  E = ateco$`222900`$E
+  
+  R = ateco$`332003`$R
+  E = ateco$`332003`$E
   
   #guardando i grafici sotto è facile notare che entrambe le distribuzioni sono
   #delle distribuzioni beta.
-  par(mfrow=c(2,1))
-  descdist(R, discrete = FALSE,obs.col="red", boot=1000,obs.pch = 15, boot.col="red")
-  descdist(E, discrete = FALSE,obs.col="red", boot=1000,obs.pch = 15, boot.col="blue")
+  par(mfrow=c(2,2))
+  descdist(R, discrete = FALSE,obs.col="red",obs.pch = 15, boot.col="blue")
+  descdist(E, discrete = FALSE,obs.col="red", obs.pch = 15, boot.col="blue")
   par(mfrow=c(1,1))
   
-  #DISTRIBUZIONE NORMALE 
-  # R: mean = 11471.51, sd=31461.72  , AIC: 10.010.044
+  #DISTRIBUZIONE NORMALE
   {
-    fit.norm.R <-fitdist(R, "norm",method = c("mle"))
-    #plot(fit.norm.R)
-    fit.norm.R$estimate
-    fit.norm.R$aic
-    n.sims <- 100
-    stats <- replicate(n.sims, {r <- rnorm(n = length(R), mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])
-    as.numeric(ks.test(r, "pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic
+    R = ateco$`222900`$R #0.0002001158
+    R = ateco$`222900`$E #0.0002473894
+    
+    R = ateco$`332003`$R #0
+    R = ateco$`332003`$E #0
+    
+    fit.norm <-fitdist(R, "norm",method = c("mle"))
+    #plot(fit.norm)
+    fit.norm$estimate
+    fit.norm$aic
+    
+    n.sims <- 5e4
+    stats <- replicate(n.sims, {
+      r <- rnorm(n = length(R), mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])
+      as.numeric(ks.test(r, "pnorm", mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])$statistic
       )      
     })
+    
     fit <- logspline(stats)
-    plogspline(ks.test(R,"pnorm", mean = fit.norm.R$estimate["mean"], sd = fit.norm.R$estimate["sd"])$statistic, fit)
-  }
-  # E: mean = 38.65826, sd=207.28282  , AIC: 5.113.555
-  {
-    fit.norm.E <-fitdist(E, "norm",method = c("mle"))
-    #plot(fit.norm.E)
-    fit.norm.E$estimate
-    fit.norm.E$aic
-    n.sims <- 10
-    stats <- replicate(n.sims, {      
-      r <- rnorm(n = length(E), mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])
-      as.numeric(ks.test(r, "pnorm", mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])$statistic
-      )      
-    })
-    fit <- logspline(stats)
-    plogspline(ks.test(E,"pnorm", mean = fit.norm.E$estimate["mean"], sd = fit.norm.E$estimate["sd"])$statistic, fit)
+    1 - plogspline(ks.test(R,"pnorm", mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])$statistic, fit)
   }
   
   #DISTRIBUZIONE LOGNORM
-  # R: meanlog=7.097309, sdlog=2.671154  , AIC = 7.192.692
+  
   {
-    fit.lnorm.R<-fitdist(R+1,"lnorm",method = c("mle"))
-    #plot(fit.lnorm.R)
-    fit.lnorm.R$estimate
-    fit.lnorm.R$aic
+    E = ateco$`222900`$R#R->0.001316869
+    E = ateco$`222900`$E #E->0.15
     
-    n.sims <- 100
+    E = ateco$`332003`$R #8.096261e-08
+    E = ateco$`332003`$E #3.551215e-11
+    
+    fit.lnorm<-fitdist(E,"lnorm",method = c("mle"))
+    #plot(fit.lnorm)
+    fit.lnorm$aic
+    
+    n.sims <- 5e4
     stats <- replicate(n.sims, {   
-      r <- rlnorm(n = length(R), meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2]  )
-      as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic
+      r <- rlnorm(n = length(E), meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2]  )
+      as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2])$statistic
       )      
     })
-    
     fit <- logspline(stats)
-    
-    plogspline(ks.test(R+1,"plnorm",meanlog = fit.lnorm.R$estimate[1] , sdlog = fit.lnorm.R$estimate[2])$statistic, fit)
-  }
-  # E: meanlog=-2.316315 , sdlog=1.569184   , AIC = 3.169.600
-  {
-    fit.lnorm.E<-fitdist(E+1,"lnorm",method = c("mle"))
-    #plot(fit.lnorm.E)
-    fit.lnorm.E$estimate
-    fit.lnorm.E$aic
-    
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rlnorm(n = length(E), meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2]  )
-      as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    
-    plogspline(ks.test(E+1,"plnorm",meanlog = fit.lnorm.E$estimate[1] , sdlog = fit.lnorm.E$estimate[2])$statistic, fit)
+    1 - plogspline(ks.test(E,"plnorm",meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2])$statistic, fit)
   }
   
-  #GAMMA DISTRIBUTION
-  # R: shape=0.2501059 ,rate=431.5276096 , AIC= -5.829.999
+  #GAMMA DISTRIBUTION OK
   {
-    R.norm = 
-    fit.gamma.R<-fitdist(R.norm,"gamma",method = c("mle"),lower=0,upper=1)
-    #plot(fit.gamma.R)
-    fit.gamma.R$estimate
-    fit.gamma.R$aic
-    n.sims <- 10
+    E = ateco$`222900`$R #p.value = 0.1026514
+    E = ateco$`222900`$E #p value = 0.1532703
+    
+    E = ateco$`332003`$R # 0
+    E = ateco$`332003`$E # 0
+    
+    fit.gamma<-fitdist(E,"gamma",method = c("mle"),lower=0)
+    #plot(fit.gamma)
+    fit.gamma$estimate
+    fit.gamma$aic
+    n.sims <- 5e4
     stats <- replicate(n.sims, {   
-      r <- rgamma(n = length(R.norm), shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2]  )
-      as.numeric(ks.test(r, "pgamma", shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2])$statistic
+      r <- rgamma(n = length(E), shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2]  )
+      as.numeric(ks.test(E, "pgamma", shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2])$statistic
       )      
     })
     
     fit <- logspline(stats)
     
-    plogspline(ks.test(R.norm,"pgamma",shape = fit.gamma.R$estimate[1] , rate = fit.gamma.R$estimate[2])$statistic, fit)
+    1 - plogspline(ks.test(E,"pgamma",shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2])$statistic,
+                   fit)
     
     
   }
-  # E: shape=0.2625213 ,rate=228.2919192, AIC =  -5.223.628
-  {
-    E.norm <- E
-    fit.gamma.E<-fitdist(E.norm,"gamma",method = c("mle"))
-    #plot(fit.gamma.R)
-    fit.gamma.E$estimate
-    fit.gamma.E$aic
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rgamma(n = length(E.norm), shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2]  )
-      as.numeric(ks.test(r, "pgamma", shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    plogspline(ks.test(E.norm,"pgamma",shape = fit.gamma.E$estimate[1] , rate = fit.gamma.E$estimate[2])$statistic, fit)
-    
-    
-  }
+  
   
   #BETA
-  # R: shape1 = 0.2397152, shape2 = 358.7267210 , AIC= -5.803.650
   {
-    R.norm <- R
-    fit.beta.R<-fitdist(R.norm,"beta")
-    fit.beta.R$estimate
-    fit.beta.R$aic
+    R = ateco$`222900`$E #R_pvalue->0.07460977 #E_pvalue->0.1504125
+    R=R*0.00001
     
-    n.sims <- 10
+    R = ateco$`332003`$R #R_pvalue->0 #E_pvalue->0
+    R=R*0.000001
+    
+    fit.beta<-fitdist(R, "beta")
+    plot(fit.beta)
+    fit.beta$estimate
+    fit.beta$aic
+    
+    n.sims <- 5e4
     stats <- replicate(n.sims, {   
-      r <- rbeta(n = length(R.norm), shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2]  )
-      as.numeric(ks.test(r, "pbeta", shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2])$statistic
+      r <- rbeta(n = length(R), shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])
+      as.numeric(ks.test(r, "pbeta", shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])$statistic
       )      
     })
     
     fit <- logspline(stats)
-    plogspline(ks.test(R.norm,"pbeta",shape1 = fit.beta.R$estimate[1] , shape2 = fit.beta.R$estimate[2])$statistic, fit)
-    
-    
-  }
-  # E: shape1 = 0.257029 , shape2 = 209.469943   , AIC = -5.211.078 
-  {
-    E.norm <- E
-    fit.beta.E<-fitdist(E.norm,"beta")
-    fit.beta.E$estimate
-    fit.beta.E$aic
-    
-    n.sims <- 10
-    stats <- replicate(n.sims, {   
-      r <- rbeta(n = length(E.norm), shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2]  )
-      as.numeric(ks.test(r, "pbeta", shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    plogspline(ks.test(E.norm,"pbeta",shape1 = fit.beta.E$estimate[1] , shape2 = fit.beta.E$estimate[2])$statistic, fit)
+    1 - plogspline(ks.test(R,"pbeta",shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])$statistic, fit)
     
     
   }
   
   
+  #WEIBULL
+  {
+  R = ateco$`222900`$R #0.1537166
+  R = ateco$`222900`$E #0.1353928-0.13
   
+  R = ateco$`332003`$R # 2.804009e-08
+  R = ateco$`332003`$E # 0
+  fit.weibull <- fitdist(R, "weibull")
+  n.sims <- 5e4
   
+  stats <- replicate(n.sims, {      
+    r <- rweibull(n = length(R)
+                  , shape= fit.weibull$estimate["shape"]
+                  , scale = fit.weibull$estimate["scale"]
+    )
+    as.numeric(ks.test(r
+                       , "pweibull"
+                       , shape= fit.weibull$estimate["shape"]
+                       , scale = fit.weibull$estimate["scale"])$statistic
+    )      
+  })
   
+  fit <- logspline(stats)
+  
+  1 - plogspline(ks.test(R, "pweibull", shape= fit.weibull$estimate["shape"],scale = fit.weibull$estimate["scale"])$statistic, fit
+  )
+  
+  }
+  
+  # UNIFORME
+  {
+  fit.unif.R<-fitdist(R+1,"unif")
+  #plot(fit.unif.R)
+  fit.unif.R$estimate
+  fit.unif.R$aic
+  n.sims <- 1000
+  stats <- replicate(n.sims, {   
+    r <- runif(n = length(R), min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2]  )
+    as.numeric(ks.test(r, "punif", min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2])$statistic
+    )      
+  })
+  
+  fit <- logspline(stats)
+  
+  1 - plogspline(ks.test(R,"punif",min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2])$statistic
+             , fit
+  )
+  }
+  
+  #PARETO
+  fit.par <-fitdist(R, "pareto")
+
 }
 
 
@@ -831,26 +503,7 @@ par(mfrow= c(1,1))
 #intervalli di confidenza su least square
 #####vecchio#####
 #DISTRIBUTION
-{
-  #DISTRIBUZIONE UNIFORME
-  fit.unif.R<-fitdist(R,"unif")
-  plot(fit.unif.R)
-  fit.unif.R$estimate
-  fit.unif.R$aic
-  {
-    n.sims <- 1000
-    stats <- replicate(n.sims, {   
-      r <- runif(n = length(R), min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2]  )
-      as.numeric(ks.test(r, "punif", min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2])$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    
-    plogspline(ks.test(R,"punif",min = fit.unif.R$estimate[1] , max = fit.unif.R$estimate[2])$statistic
-               , fit
-    )
-  }
+
   #DISTRIBUZIONE ESPONENZIALE
   fit.exp.R<-fitdist(R,"exp")
   plot(fit.exp.R)
@@ -1133,9 +786,6 @@ density(altro$growth,na.rm = TRUE)
 
 
 
-
-
-}
 
 
 ##### DOMANDE TANTARI#####
