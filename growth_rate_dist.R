@@ -179,4 +179,58 @@ curve(dcauchy(x, 0.007378846, 0.1091681), add=T,col = "red", lwd=2)
 legend("topright", c("Laplace fit", "Cauchy fit"), col=c("blue", "red"), lwd=3)
 
 gofstat(fit4)
+
+
+ks.test(growth, "pcauchy", 0, 0.0623094)
+ks.test(growth, "pnorm", 0.0056724, 0.3310969)
+#plot(growth, pcauchy(growth, 0.0056724, 0.3310969))
+plot(ecdf(rcauchy(length(growth), 0.0056724, 0.3310969)), col="blue", cex=0.5)
+plot(ecdf(rlaplace(length(growth),  0.00302667, 0.07369791)), col="blue", cex=0.5)
+lines(ecdf(growth), lwd=3, col="red")
+
+
+n.sims <- 500
+stats <- replicate(n.sims, {
+  r <- rlaplace(length(x)
+                , 0.00438608
+                , 0.10486774)
+  as.numeric(ks.test(r
+                     , "plaplace"
+                     , 0.00438608
+                     , 0.10486774)$statistic)})
+
+fit5 <- logspline(stats)
+
+1 - plogspline(ks.test(x
+                       , "plaplace"
+                       , 0.00438608
+                       , 0.10486774)$statistic
+               , fit5
+)
+
+# yx <- rnorm(100000)
+# xy <- rnorm(100000)
+# mean(yx)
+#z.test(yx, sigma.x = 1, yx, sigma.y = 1, mu=0, "two.sided", TRUE)
+#z.test(growth,sigma.x=sd(growth))
+#Ask about paired z-test with two dependent samples
+#Ask about the chi-sqaure test (is it suitable to determine goodness of fit?)
+min(growth)
+bins <-(seq(min(growth),max(growth),0.05))
+bins
+#Chi-square test
+
+growth.cut<-cut(growth,breaks=seq(min(growth),max(growth),0.05), include.lowest = TRUE) ##binning data
+table(growth.cut) ## binned data table
+growth.cut
+
+p=c()
+for (i in 1:(length (seq(min(growth),max(growth),0.05)))-1) {
+  p[i] <- plaplace(bins[i+1],0,0.0623094)-plaplace(bins[i],0,0.0623094)
+}
+
+f.os<-c()
+for (j in 1:50) {f.os[j]<- table(growth.cut)[[j]]}
+
+chisq.test(x=f.os,p=p)
   
