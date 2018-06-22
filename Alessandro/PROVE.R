@@ -71,9 +71,6 @@ quantile(f.norm, probs=.05) # 95% percentile bootstrap confidence interval
 
 
 
-
-
-
 {
 set.seed(3)
 x <- rgamma(1e5, 2, .2)
@@ -90,3 +87,19 @@ aadt
 a = boxcoxnc(aadt, method = "mle")
 a$tf.data
 }
+
+
+library(fitdistrplus)
+data(toxocara)
+library(boot)
+
+fit=fitdist()
+statistic <- function(x, inds) {fitdist(x[inds],"norm")$estimate}
+
+bs <- boot(toxocara$number, statistic, R = 4000)
+bs
+print(boot.ci(bs, conf=0.95, type="bca"))
+
+
+
+
