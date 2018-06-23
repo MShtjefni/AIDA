@@ -174,7 +174,7 @@ save(manufacturing, file="manufacturing.RData")
 ###### VARIABLES DISTRIBUTION  ######
 #delete environment
 {
-  ls() #controllo le variabili di ambiente
+ls() #controllo le variabili di ambiente
 rm(list = ls()) #rimuoviamo tutte le varaibili d'ambiente
 ls() #controllo se sono state eliminate le variabili d'ambiente
 }
@@ -269,16 +269,17 @@ plot.by.geo(by.geo)
 }
 
 #prove sulla distribuzione, passi e risultati ottenuti
-{
+{ 
+  #manufacturing-> 378,612 entries
+
   #### 1 - Analisi della distribuzione per la totalità di R ed E#####
     #Il dataset di 350.000 circa records, risulta impossibile da analizzare
     #per questo motivo si passa ad un'analisi della distribuzione iniziando a splittare il dataset.
     #Dal grafico è stato possibile osservare che i dati di R ed E seguono una distribuzione forse gamma
    #tutto zero
-  #### 2- Analisi della distribuzione per R ed E in base alla size delle aziende (small,medium big).####
-      #È inutile prendere in considerazione una granularità così grande perchè non otteniamo p.value validi per lo 0.001                                                       
-  
-                                          #### SMALL ###
+  #### 2- Analisi della distribuzione per SIZE (small,medium big).####
+      #È inutile prendere in considerazione una granularità così grande perchè non otteniamo p.value validi per lo 0.001
+                                          #### SMALL #####
     #R sembra seguire una distribuzione tra lognormal e gamma. Invece E sembra seguire una distribuzione centrata su beta
     # Normal: R-->mean=3270.692, sd=10662.140, AIC=6.817.256, p.value=0 
     #         E-->mean=11.61359, sd=11.67069,  AIC=2.471.044, p.value=0
@@ -297,7 +298,7 @@ plot.by.geo(by.geo)
   
     # Expon  : R-->p.value=0
     #          E-->p.value=0
-                                          ### MEDIUM ###
+                                          ### MEDIUM #####
     #R sembra seguire una distribuzione tra lognormal e gamma ma più vicina a gamma. Invece E sembra seguire una distribuzione centrata su beta uguale per small
     # Normal: R-->p.value=0
     #         E-->p.value=0
@@ -316,7 +317,17 @@ plot.by.geo(by.geo)
     
     # Expon : R-->p.value=0
     #         E-->p.value=0
-                                          #### BIG ###
+                                          #### MEDIUM BY ACTIVE -- 47669 ####
+  
+                                          #### MEDIUM BY ACTIVE, ALIMENTARE --3231 ####
+  #LNORM R:->0.06593318
+
+                                          #### MEDIUM BY ACTIVE, NCA,2014 -- 931 ####
+  #LOGNORM R:->0.1811011
+  #BETA R:->0.000224175
+  #
+  
+                                          #### BIG #####
     # Secondo il grafico R si trova su beta, ed E si trova vicino log 
     # Normal: R-->p.value=0
     #         E-->p.value=0
@@ -335,118 +346,174 @@ plot.by.geo(by.geo)
     
     # Expon : R-->p.value=0
     #         E-->p.value=0 #tutto zero
-  #### 3 - Analisi della distribuzione per R ed E in base   al sottosettore di riferimento ####
-                                          #### SMALL###
-                                    ##### Alimentare/Food SubSector -- 23,449 entries #####
-  #R sembra seguire una distribuzione tra lognormal e gamma. Invece E sembra seguire una distribuzione centrata su beta
-  # Normal: R--> p.value=0 
-  #         E--> p.value=0
-  
-  # LNorm:R--> P.VALUE=0 
-  #       E-->  p.value=0
-  
-  # Gamma:R--> p.value=0 
-  #       E--> p.value=0
-  
-  # Beta: R--> p.value=0
-  #       E--> p.value=0
-  
-  # Weibull: R--> p.value=0
-  #          E--> p.value=0
-  
-  # Expon  : R-->p.value=0
-  #          E-->p.value=0
+                                          #### BIG BY ACTIVE, NCA 2014####
+  #LOGNORM E->0.006286393
+  #LOGNORM R->0.09053475
   
   
-                                            
+  
+                                          #### BIG BY ACTIVE NCA 2015 --171####
+  
+  #### 3 - Analisi della distribuzione per STATUS ####
+                                          ##### ACTIVE -- 339,057 entries ######
+  #troppo grande e troppa dispersione
+                                    
+  
+ 
+                                    
+  unique(manufacturing$Status)
+                                    
+  
+                                          ##### ACTIVE by YEAR -- 37,673 entries for every year####
+                                          ##### ACTIVE BY REGION Abruzzo, YEAR 2007 -- 691 entries ####
+  #R -> beta, E-> gamma/beta
+  # Normal: R-->0
+  #         E-->0
+  
+  # LNorm:R--> 7.633145e-06
+  #       E-->2.041734e-06
+  
+  # Gamma:R-->2.422297e-08
+  #       E-->1.635403e-11
+  
+  # Beta: R-->3.718057e-08
+  #       E-->3.043633e-10
+  
+  # Weibull:R-->0.03062575
+  #         E-->1.374938e-08
+  
+  # Expon  :R-->0
+  #         E-->1.48598e-10
+  
+  # Geom  :R-->0
+  #         E-->0
+  
+  #Pareto :R-->0
+  #         E--0
+  
+  #LOgistica :R-->0
+  #           :E->0
   
   
-                                    ##### Alimentare/Food SubSector by Year 2007 --2.643 entries####
-  #R sembra seguire una distribuzione tra lognormal e gamma. Invece E sembra seguire una distribuzione centrata su beta
-  # Normal: R--> p.value=0 
-  #         E--> p.value=0
+                                          
+
+                                          
+                                          ##### BANKRU -- 2223 ####
+  #LNORM R->0.004054871
+  #### 4 - Analisi distribuzione per SUBSECTORS 
+                                          #####  MOBILI  -- 17 troppo pochi#######
+                      
+                                          #####  BEVANDE  -- 5823 (Shit)#######
+  #R -> beta, E-> beta
+  # Normal: R-->0
+  #         E-->0
   
-  # LNorm:R--> P.VALUE=.21645e-15
-  #       E-->  p.value=5.428991e-14
+  # LNorm:R--> 4.477032e-07
+  #       E-->4.037856e-09
   
-  # Gamma:R--> p.value=3.920846e-07
-  #       E--> p.value=2.742251e-14
+  # Gamma:R-->0
+  #       E-->0
   
-  # Beta: R--> p.value=2.148831e-06
-  #       E--> p.value=8.847367e-12
+  # Beta: R-->
+  #       E-->
   
-  # Weibull: R--> p.value=1.942044e-07
-  #          E--> p.value=5.607736e-13
+  # Weibull:R-->0.001614602
+  #         E-->0
   
-  # Expon  : R-->p.value=1.942044e-07
-  #          E-->p.value=6.400436e-13
-                                    ##### Metallo -- 61,825 entries####
-  #R sembra seguire una distribuzione tra lognormal e gamma. Invece E sembra seguire una distribuzione centrata su beta
-  # Normal: R--> p.value=0 
-  #         E--> p.value=0
+  # Expon  :R-->0
+  #         E-->0
   
-  # LNorm:R--> P.VALUE=0 
-  #       E-->  p.value=0
+  # Geom  :R-->0
+  #         E-->0
   
-  # Gamma:R--> p.value=0 
-  #       E--> p.value=0
+  #Pareto :R-->0
+  #         E--0
   
-  # Beta: R--> p.value=0
-  #       E--> p.value=0
-  
-  # Weibull: R--> p.value=0
-  #          E--> p.value=0
-  
-  # Expon  : R-->p.value=0
-  #          E-->p.value=0
+  #LOgistica :R-->0
+  #           :E->0
   
   
-  #### 4 - Analisi della distribuzione di R ed E in base alle regioni geografiche (Puglia, Sicilia ecc)####
-                                    ##### Puglia Region -- 7,263 entries ####
-  #R sembra seguire una distribuzione tra beta . Invece E sembra seguire una distribuzione centrata su beta/gamma
-  # Normal: R--> p.value=0 
-  #         E--> p.value=0
   
-  # LNorm:R--> P.VALUE=0 
-  #       E-->  p.value=0
   
-  # Gamma:R--> p.value=0 
-  #       E--> p.value=0
+                                          #####  BEVANDE BY SMALL -- 5176 #####
+  #WEIUBULL R->0.0001544586
   
-  # Beta: R--> p.value=0
-  #       E--> p.value=0
   
-  # Weibull: R--> p.value=0
-  #          E--> p.value=0
+                                          #####  PELLE --12042 #####
+                    #only shit
   
-  # Expon  : R-->p.value=0
-  #          E-->p.value=0
+                                          
+                                          ##### PELLE BY SMALL -- 10204#####
+  #only only only shit
+                                          #####  PELLE BY MEDIUM -- #####
+  #LOGNORM R->0.2100501
   
-                                    ##### Puglia Region - by Size Small -- 7.216 small####
-  #R sembra seguire una distribuzione tra beta/gamma . Invece E sembra seguire una distribuzione centrata su beta/gamma
-  # Normal: R--> p.value=0 
-  #         E--> p.value=0
   
-  # LNorm:R--> P.VALUE=0 
-  #       E-->  p.value=0
+  #### 5 - Analisi distribuzione per Province 
+                                          ##### FOGGIA -- 819#####
+  #R -> beta, E-> beta
+  # Normal: R-->0
+  #         E-->0
   
-  # Gamma:R--> p.value=0 
-  #       E--> p.value=0
+  # LNorm:R--> 4.921619e-13
+  #       E-->0
   
-  # Beta: R--> p.value=0
-  #       E--> p.value=0
+  # Gamma:R-->
+  #       E-->
   
-  # Weibull: R--> p.value=0
-  #          E--> p.value=0
+  # Beta: R-->2.627657e-10
+  #       E-->0
   
-  # Expon  : R-->p.value=0
-  #          E-->p.value=0
-                                    #non continuo per puglia perchè non avrebbe senso visto che tra big e medium ce ne sarebbero 50
-                                    ##### Lombardia Region
+  # Weibull:R-->2.367251e-11
+  #         E-->0
+  
+  # Expon  :R-->0
+  #         E-->0
+  
+  # Geom  :R-->0
+  #         E-->0
+  
+  #Pareto :R-->0
+  #         E--0
+  
+  #LOgistica :R-->0
+  #           :E->0
+  
+                                          ##### FOGGIA BY Small -- 819 non possiamo procedere su FOggia####  
+                                          ##### FOGGIA BY YEAR 2007 -- 91 ####
+  #R -> beta, E-> beta
+  # Normal: R-->0.005839164
+  #         E-->0.0001837799
+  
+  # LNorm:R--> 0.0006785059
+  #       E-->0.8842354
+  
+  # Gamma:R-->
+  #       E-->
+  
+  # Beta: R-->0.04743787
+  #       E-->0.3059009
+  
+  # Weibull:R-->0.002372771
+  #         E-->1.916052e-05
+  
+  # Expon  :R-->7.917e-13
+  #         E--> 0.1090379
+  
+  # Geom  :R-->
+  #         E-->0.01770227
+  
+  #Pareto :R-->
+  #         E-->0.002840455
+  
+  #LOgistica :R-->9.177104e-13
+  #           :E->7.669976e-09
+                                          
+    
 }
 
-
-#istribution and hypotesis test ks
+set.seed(10)
+#distribution and hypotesis test ks
 {
   library(fitdistrplus)
   library(logspline)
@@ -457,10 +524,15 @@ plot.by.geo(by.geo)
   library(poweRlaw)
   library(fExtremes)
   library(AID)
-  size = split(manufacturing,manufacturing$Region)
-  small= size$Puglia
-  food= small[small$Size=="Small",]
-  View(food)
+  
+  a = split(manufacturing,manufacturing$SubSector)
+  a = a$Alimentare
+  
+
+  nrow(a)
+  food=a[a$Year=="2007",]
+  
+  #View(food)
 
   E = food$E
   R = food$R
@@ -471,16 +543,43 @@ plot.by.geo(by.geo)
   par(mfrow=c(1,1))
   
   #DISTRIBUZIONE NORMALE
+  R = food$E[food$E>1]
+  R = food$R[food$R>1]
+  R = food$R
+  R = food$E
+  
+  R= rnorm(100)
+  R = rnorm(120)
+  fit.norm <-fitdist(R, "norm",method = c("mle"))
+  plot(fit.norm)
+  fit.norm$estimate
+  fit.norm$aic
+  boot = bootdist(fit.norm, niter=1001, ncpus= 4,bootmethod="param")
+  boot$estim #ALL ESTIMATED VALUE FOR BOOTSRAP
+  q = quantile(boot,0.)
+  q$CI.level
+  
+  qqplot(R,dnorm(R,mean =fit.norm$estimate[1],sd=fit.norm$estimate[2]))
+  qqline(dnorm(R,mean =fit.norm$estimate[1],sd=fit.norm$estimate[2]))
+  pr
+  cdfcomp(fit.norm,fitcol = "red",legendtext = "Fit Normal")
+  CIcdfplot(boot, CI.output = "quantile", CI.fill = "pink",CI.type = "two.sided")
+  
+  summary(boot)
+  
   {
-    R = food$E
-    R = food$R
-    
     fit.norm <-fitdist(R, "norm",method = c("mle"))
+    fit.norm$aic
+    fit.norm$estimate
+    a = bootdist(fit.norm, niter=10, ncpus= 4,bootmethod="nonparam")
+    
+    
+    
     #plot(fit.norm)
     fit.norm$estimate
     fit.norm$aic
-    
-    n.sims <- 100
+    plot(fit.norm)
+    n.sims <- 1000
     stats <- replicate(n.sims, {
       r <- rnorm(n = length(R), mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])
       as.numeric(ks.test(r, "pnorm", mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])$statistic
@@ -492,16 +591,20 @@ plot.by.geo(by.geo)
   }
   
   #DISTRIBUZIONE LOGNORM
+  E = food$E[food$E>1]
+  E = food$R[food$R>1]
   {
-    E = food$E
-    E = food$R
+    
     
     fit.lnorm<-fitdist(E,"lnorm",method = c("mle"))
     #plot(fit.lnorm)
     fit.lnorm$estimate
     fit.lnorm$aic
     
-    n.sims <- 100
+    a = bootdist(fit.lnorm, niter=100, ncpus  = 4,bootmethod="param")
+    quantile(a,prob=0.5)
+    
+    n.sims <- 1000
     stats <- replicate(n.sims, {   
       r <- rlnorm(n = length(E), meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2]  )
       as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2])$statistic
@@ -513,9 +616,10 @@ plot.by.geo(by.geo)
   }
   
   #GAMMA DISTRIBUTION 
+  E = food$E[food$E>1]
+  E = food$R[food$R>1]
   {
-    E = food$E
-    E = food$R
+    
     
     fit.gamma<-fitdist(E,"gamma",method = c("mle"),lower=0)
     #plot(fit.gamma)
@@ -535,16 +639,17 @@ plot.by.geo(by.geo)
     }
   
   #BETA
+  R = food$E[food$E>1]*0.0000001
+  R = food$R[food$R>1]*0.0000001
   {
-    R =  food$E*0.0000001
-    R =  food$R*0.0000001
+    
     
     fit.beta<-fitdist(R, "beta")
     #plot(fit.beta)
     fit.beta$estimate
     fit.beta$aic
     
-    n.sims <- 100
+    n.sims <- 2000
     stats <- replicate(n.sims, {   
       r <- rbeta(n = length(R), shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])
       as.numeric(ks.test(r, "pbeta", shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])$statistic
@@ -557,9 +662,10 @@ plot.by.geo(by.geo)
   }
   
   #WEIBULL
+  R = food$E[food$E>1]
+  R = food$R[food$R>1]
   {
-    R =  food$E
-    R =  food$R
+    
     
     fit.weibull <- fitdist(R, "weibull")
     fit.weibull$estimate
@@ -585,17 +691,18 @@ plot.by.geo(by.geo)
     
   }
   
-  #DISTRIBUZIONE ESPONENZIALE
+  #ESPONENZIALE
+  R = food$E[food$E>1]
+  R = food$R[food$R>1]
   {
-  R =  food$E
-  R =  food$R
+ 
   
   fit.exp<-fitdist(R,"exp",method = c("mle"),lower=0.1)
   #plot(fit.exp)
   fit.exp$estimate
   fit.exp$aic
   
-    n.sims <- 100
+    n.sims <- 1000
     stats <- replicate(n.sims, {   
       r <- rexp(n = length(R), rate = fit.exp$estimate[1]  )
       as.numeric(ks.test(r, "pexp", rate = fit.exp$estimate[1])$statistic
@@ -609,8 +716,134 @@ plot.by.geo(by.geo)
     )
   
   
-}
+  }
   
+  #GEOMETRICA
+  R = food$E[food$E>1]
+  R = food$R[food$R>1]
+  {
+    
+    fit.geom<-fitdist(round(R),"geom",method = c("mle"))
+    #plot(fit.exp)
+    fit.geom$estimate
+    fit.geom$aic
+    
+    n.sims <- 1000
+    stats <- replicate(n.sims, {   
+      r <- rgeom(n = length(R), prob = fit.geom$estimate[1]  )
+      as.numeric(ks.test(r, "pgeom", prob = fit.geom$estimate[1])$statistic
+      )      
+    })
+    
+    fit <- logspline(stats)
+    
+    1- plogspline(ks.test(R,"pgeom",prob = fit.geom$estimate[1] )$statistic
+                  , fit
+    )
+    
+    
+  }
+  
+
+  #LOG LOGISTICA
+  R = food$E[food$E>1]
+  R = food$R[food$R>1]
+  {
+  #nella distribuzione lloglogistica, i parametri devo essere positivi
+  fit.llogis<- fitdist(R ,"llogis", start = list(shape = 1))
+    #plot(fit.llogis)
+    fit.llogis$estimate
+    fit.llogis$aic
+    
+    n.sims <- 2000
+    stats <- replicate(n.sims, {   
+      r <- rllogis(n = length(R), shape = fit.llogis$estimate[1]  )
+      as.numeric(ks.test(r, "pllogis",  shape = fit.llogis$estimate[1])$statistic
+      )      
+    })
+    
+    fit <- logspline(stats)
+    
+    1- plogspline(ks.test(R,"pllogis", shape = fit.llogis$estimate[1] )$statistic
+                  , fit
+    )
+  
+  }
+  
+
+  #POWERLAW FOR CONTINUOUS ATTRIBUTE
+  R = food$E[food$E>1]
+  R = food$R
+  {
+  
+    fp <- fitdist(R, "pareto", lower = c(0, 0), start = list(scale = 1, shape = 1))
+    fp$estimate
+    fp$aic
+    
+    ks.test(R,"ppareto", scale=fp$estimate[1] , shape = fp$estimate[2])
+    
+    n.sims <- 200
+    stats <- replicate(n.sims, {   
+      r <- rpareto(n = length(R), shape = fp$estimate[1]  )
+      as.numeric(ks.test(r, "ppareto", scale=fp$estimate[1] , shape = fp$estimate[2])$statistic
+      )      
+    })
+    
+    fit <- logspline(stats)
+    
+    1- plogspline(ks.test(R,"ppareto", scale=fp$estimate[1] , shape = fp$estimate[2])$statistic
+                  , fit
+    )
+  
+  }
+  
+}
+
+
+###### POWER LAW ######
+#POWERLAW FOR CONTINUOUS ATTRIBUTE
+#For computational problems, I fit power law for Alimentare/Food subsector for 2007-2008
+#2007-> E-p.value=0.609      alpha=2.205376  xmin=78       time=6min
+#2007-> R-p.value=1          alpha=2.332329  xmin=99240.45 time=6min
+
+#2008->E-p.value=0.68      alpha=2.244039   xmin=74              time=2min
+#2008->R-p.value=1        alpha=2.247034   xmin=98234.11        time=6min
+
+#2009->E-p.value=      alpha=   xmin=              time=2min
+#2009->R-p.value=      alpha=   xmin=        time=6min
+
+{
+  manufacturing = get(load("manufacturing.RData"))
+  r=rnorm(100,3)
+  r = r+min(r)+1
+  r
+  food = manufacturing[manufacturing$SubSector=="Alimentare",]
+  
+  food.E = food$E
+  food.R = food$R[food$Year==2008]
+  
+
+  length(r)
+  r=food.E
+  m_r = conpl$new(r) #we can estimate the same value for continuous var
+  (est = estimate_xmin(m_r))
+  m_r$setXmin(est)
+  
+  #plot data from xmin
+  plot(m_r,ylab="Freq")
+  View(m_r$dat)
+  m_r
+  
+  #add in the fitted value
+  lines(m_r, col=2)
+  
+  parallel::detectCores() #for know how cores we have
+  bs_p = bootstrap_p(m_r, no_of_sims=200, threads=4)
+  bs_p$p
+  plot(bs_p)
+  hist(bs_p$bootstraps[,1])
+  
+
 }
 
 
@@ -714,28 +947,7 @@ par(mfrow= c(1,1))
   }
   
   
-  #DISTRIBUZIONE DI PARETO 
-  m_plwords = displ$new(round(R))
-  est_plwords = estimate_xmin(m_plwords)
-  m_plwords$setXmin(est_plwords$xmin)
-  m_plwords$setPars(est_plwords$pars)
-  bs_p = bootstrap_p(m_plwords,no_of_sims = 100,threads = 4)   
-  bs_p$p
-  plot(m_plwords)
-  {
-    n.sims <- 1000
-    stats <- replicate(n.sims, {   
-      r <- rpareto(n = length(R), scale=scale ,shape = shape)
-      as.numeric(ks.test(r, "ppareto", scale=scale ,shape = shape)$statistic
-      )      
-    })
-    
-    fit <- logspline(stats)
-    
-    plogspline(ks.test(R,"ppareto",scale=4.013177e+04 ,shape = 7.342282e-01)$statistic
-               , fit
-    )
-  }
+  
   
 
 ##### SUMMARY STATISTICS #####
