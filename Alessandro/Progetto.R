@@ -65,12 +65,16 @@ barplot(tb.year,xlab = "Year")
 
 
 #SETTORE MANIFATTURIERO  firms with year>=2007
-manufacturing$Year =  as.numeric(as.character(manufacturing$Year))
+
 manufacturing = subset(manufacturing,R>=0 & E>=0) 
-manufacturing$Year =  as.factor(manufacturing$Year)
 nrow(manufacturing) #1.029.156
 
+summary(manufacturing)
 
+ manufacturing = subset(manufacturing,manufacturing$Year<2016)
+nrow(manufacturing)
+
+{
 #select firm with year 2007 to 2015 = 9 years of data
 tb = table(manufacturing$TaxID,manufacturing$Year)
 tb = as.data.frame.matrix(tb)
@@ -83,7 +87,7 @@ from07to15 <- from07to15[order(from07to15$TaxID,from07to15$Year),]
 nrow(from07to15)# 378.612 records
 length(unique(from07to15$TaxID))#42.068
 manufacturing = from07to15
-
+}
 
 #manufacturing subsector
 {
@@ -148,22 +152,23 @@ manufacturing$Size[manufacturing$E >= 250] <- "Big"
 
 
 
-length(unique(manufacturing$TaxID))#42.068 firms
-nrow(manufacturing) #378.612 unique records
+length(unique(manufacturing$TaxID))#169434
+nrow(manufacturing) #1027140
 
 
 manufacturing$R = manufacturing$R+1
 manufacturing$E = manufacturing$E+1
 
+nrow(manufacturing)
 
 
-manufacturing$z.E= z <- (manufacturing$E - min(manufacturing$E)) /(max(manufacturing$E) - min(manufacturing$E))
-manufacturing$z.R= z <- (manufacturing$R - min(manufacturing$R)) /(max(manufacturing$R) - min(manufacturing$R))
+#manufacturing$z.E= z <- (manufacturing$E - min(manufacturing$E)) /(max(manufacturing$E) - min(manufacturing$E))
+#manufacturing$z.R= z <- (manufacturing$R - min(manufacturing$R)) /(max(manufacturing$R) - min(manufacturing$R))
 
-manufacturing$z.R = manufacturing$z.R-1
-manufacturing$z.E = manufacturing$z.E-1
+#manufacturing$z.R = manufacturing$z.R-1
+#manufacturing$z.E = manufacturing$z.E-1
+#View(manufacturing)
 
-View(manufacturing)
 save(manufacturing, file="manufacturing.RData")
 
 
@@ -506,7 +511,7 @@ plot.by.geo(by.geo)
   #Pareto :R-->
   #         E-->0.002840455
   
-  #LOgistica :R-->9.177104e-13
+  #Logistica :R-->9.177104e-13
   #           :E->7.669976e-09
                                           
     
@@ -524,14 +529,12 @@ set.seed(10)
   library(poweRlaw)
   library(fExtremes)
   library(AID)
+  library(boot)
   
-  a = split(manufacturing,manufacturing$SubSector)
-  a = a$Alimentare
-  
-
+  a = split(manufacturing,manufacturing$Size)
+  a = a$Big
   nrow(a)
-  food=a[a$Year=="2007",]
-  
+  food=a
   #View(food)
 
   E = food$E
@@ -545,40 +548,14 @@ set.seed(10)
   #DISTRIBUZIONE NORMALE
   R = food$E[food$E>1]
   R = food$R[food$R>1]
-  R = food$R
-  R = food$E
-  
-  R= rnorm(100)
-  R = rnorm(120)
-  fit.norm <-fitdist(R, "norm",method = c("mle"))
-  plot(fit.norm)
-  fit.norm$estimate
-  fit.norm$aic
-  boot = bootdist(fit.norm, niter=1001, ncpus= 4,bootmethod="param")
-  boot$estim #ALL ESTIMATED VALUE FOR BOOTSRAP
-  q = quantile(boot,0.)
-  q$CI.level
-  
-  qqplot(R,dnorm(R,mean =fit.norm$estimate[1],sd=fit.norm$estimate[2]))
-  qqline(dnorm(R,mean =fit.norm$estimate[1],sd=fit.norm$estimate[2]))
-  pr
-  cdfcomp(fit.norm,fitcol = "red",legendtext = "Fit Normal")
-  CIcdfplot(boot, CI.output = "quantile", CI.fill = "pink",CI.type = "two.sided")
-  
-  summary(boot)
   
   {
+    
     fit.norm <-fitdist(R, "norm",method = c("mle"))
-    fit.norm$aic
-    fit.norm$estimate
-    a = bootdist(fit.norm, niter=10, ncpus= 4,bootmethod="nonparam")
-    
-    
-    
     #plot(fit.norm)
     fit.norm$estimate
     fit.norm$aic
-    plot(fit.norm)
+   
     n.sims <- 1000
     stats <- replicate(n.sims, {
       r <- rnorm(n = length(R), mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])
@@ -601,9 +578,7 @@ set.seed(10)
     fit.lnorm$estimate
     fit.lnorm$aic
     
-    a = bootdist(fit.lnorm, niter=100, ncpus  = 4,bootmethod="param")
-    quantile(a,prob=0.5)
-    
+  
     n.sims <- 1000
     stats <- replicate(n.sims, {   
       r <- rlnorm(n = length(E), meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2]  )
@@ -628,7 +603,7 @@ set.seed(10)
     n.sims <- 1000
     stats <- replicate(n.sims, {   
       r <- rgamma(n = length(E), shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2]  )
-      as.numeric(ks.test(E, "pgamma", shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2])$statistic
+      as.numeric(ks.test(r, "pgamma", shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2])$statistic
       )      
     })
     
@@ -639,11 +614,9 @@ set.seed(10)
     }
   
   #BETA
-  R = food$E[food$E>1]*0.0000001
-  R = food$R[food$R>1]*0.0000001
+  R = food$E[food$E>1]*0.00000001
+  R = food$R[food$R>1]*0.00000001
   {
-    
-    
     fit.beta<-fitdist(R, "beta")
     #plot(fit.beta)
     fit.beta$estimate
@@ -697,7 +670,7 @@ set.seed(10)
   {
  
   
-  fit.exp<-fitdist(R,"exp",method = c("mle"),lower=0.1)
+  fit.exp<-fitdist(R,"exp",method = c("mle") 
   #plot(fit.exp)
   fit.exp$estimate
   fit.exp$aic
@@ -772,19 +745,18 @@ set.seed(10)
   
 
   #POWERLAW FOR CONTINUOUS ATTRIBUTE
-  R = food$E[food$E>1]
+  R = food$E
   R = food$R
   {
-  
+    
     fp <- fitdist(R, "pareto", lower = c(0, 0), start = list(scale = 1, shape = 1))
     fp$estimate
     fp$aic
     
-    ks.test(R,"ppareto", scale=fp$estimate[1] , shape = fp$estimate[2])
     
-    n.sims <- 200
+    n.sims <- 1000
     stats <- replicate(n.sims, {   
-      r <- rpareto(n = length(R), shape = fp$estimate[1]  )
+      r <- rpareto(n = length(R), scale=fp$estimate[1] , shape = fp$estimate[2] )
       as.numeric(ks.test(r, "ppareto", scale=fp$estimate[1] , shape = fp$estimate[2])$statistic
       )      
     })
@@ -796,6 +768,9 @@ set.seed(10)
     )
   
   }
+  
+  
+ 
   
 }
 
@@ -814,17 +789,26 @@ set.seed(10)
 
 {
   manufacturing = get(load("manufacturing.RData"))
-  r=rnorm(100,3)
-  r = r+min(r)+1
-  r
+  
   food = manufacturing[manufacturing$SubSector=="Alimentare",]
   
+  View(manufacturing)
+  nrow(food)
   food.E = food$E
-  food.R = food$R[food$Year==2008]
+  plot(food.E)
+  View(food.E)
+  e=table(food.E)
+  names(e)
+  plot(e)
+  plot(names(e),e)
+  plot(names(e), e , log="xy",xlab="N. Employee",ylab="Freq")
+  plot(density(moby), log="xy") # density does not work
   
-
+  food.R = food$R[food$Year==2007]
+  
+  plot(R)
   length(r)
-  r=food.E
+  r=food.R
   m_r = conpl$new(r) #we can estimate the same value for continuous var
   (est = estimate_xmin(m_r))
   m_r$setXmin(est)
@@ -909,6 +893,10 @@ par(mfrow= c(1,1))
 
 ######
 {
+  statistic <- function(x, inds) {fitdist(x[inds],"norm")$estimate}
+  bs <- boot(R, statistic, R = 40)
+  print(boot.ci(bs, conf=0.95, type="bca"))
+  
 #####vecchio#####
 #DISTRIBUTION
 
