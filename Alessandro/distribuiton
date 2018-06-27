@@ -9,5 +9,21 @@ For the distribution analysis I use the manufacturing dataset with 1.027.140 rec
 
 ------ GAMMA DISTRIBUTION --------
 - EMPLOYEE : AIC = 5.472.443. The sample mean is in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
-- REVENUE: 
+- REVENUE: AIC = 12.271.982. The sample mean is in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+
+------ BETA DISTRIBUTION ---------
+- EMPLOYEE : AIC = -10.641.955. The sample mean is in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+- REVENUEE :AIC = -13.514.196. The sample mean is in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+
+------ WEIBULL DISTRIBUTION -----
+-EMPLOYEE : AIC = 5.292.051. The sample mean and sd are in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+- REVENUE : AIC =
+
+
+
+
+
+
+
+
 

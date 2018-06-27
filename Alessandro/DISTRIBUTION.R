@@ -201,30 +201,115 @@ par(mfrow=c(1,1))
   abline(v=boot.gamma.R$CI[4],col="red")
   abline(v=boot.gamma.R$CI[6],col="red")
   
-  
+  ks.test(R,"pgamma",shape=fit.gamma.R$estimate[1],rate=fit.gamma.R$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.gamma.R)
   
   
   #### BETA DISTRIBUTION #####
   #### EMPLOYEE DISTRIBUTION (rejected)
-  fit.beta.E = fitdist(E*0.0001,"beta") #fit our distribution for a log normal distribution
-  gof.beta.E = gofstat(fit.beta.E)
-  gof.beta.E
+  fit.beta.E = fitdist(E*0.00001,"beta") #fit our distribution for a log normal distribution
+  fit.beta.E$estimate[1] # shape1 sample
+  fit.beta.E$estimate[2] # shape2 sample
+  boot.beta.E =  bootdist(fit.beta.E, niter = 100,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.beta.E)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.beta.E$estim[,1]))
+  abline(v = mean(boot.beta.E$estim[,1]), col="black")
+  abline(v=fit.beta.E$estimate[1],col="blue")
+  abline(v=boot.beta.E$CI[3],col="red")
+  abline(v=boot.beta.E$CI[5],col="red")
+  
+  plot(density(boot.beta.E$estim[,2]))
+  abline(v = mean(boot.beta.E$estim[,2]), col="black")
+  abline(v=fit.beta.E$estimate[2],col="blue")
+  abline(v=boot.beta.E$CI[4],col="red")
+  abline(v=boot.beta.E$CI[6],col="red")
+  
+  
+  ks.test(E,"pbeta",shape1=fit.beta.E$estimate[1],shape2=fit.beta.E$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.beta.E)
   
   #### REVENUEE DISTRIBUTION (rejected)
-  fit.beta.R = fitdist(R*0.0000001,"beta")#fit our distribution for a normal distribution
-  gof.beta.R = gofstat(fit.beta.R)
-  gof.gamma.R
+  fit.beta.R = fitdist(R*0.00000001,"beta")#fit our distribution for a normal distribution
+  fit.beta.R$estimate[1] # shape1 sample
+  fit.beta.R$estimate[2] # shape2 sample
+  boot.beta.R =  bootdist(fit.beta.R, niter = 100,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.beta.R)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.beta.R$estim[,1]))
+  abline(v = mean(boot.beta.R$estim[,1]), col="black")
+  abline(v=fit.beta.R$estimate[1],col="blue")
+  abline(v=boot.beta.R$CI[3],col="red")
+  abline(v=boot.beta.R$CI[5],col="red")
+  
+  plot(density(boot.beta.R$estim[,2]))
+  abline(v = mean(boot.beta.R$estim[,2]), col="black")
+  abline(v=fit.beta.R$estimate[2],col="blue")
+  abline(v=boot.beta.R$CI[4],col="red")
+  abline(v=boot.beta.R$CI[6],col="red")
+  
+  
+  ks.test(R,"pbeta",shape1=fit.beta.R$estimate[1],shape2=fit.beta.R$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.beta.R)
   
   #### WEIBULL DISTRIBUTION #####
   #### EMPLOYEE DISTRIBUTION (rejected)
-  fit.weibull.E = fitdist(E,"weibull") #fit our distribution for a log normal distribution
-  gof.weibull.E = gofstat(fit.weibull.E)
-  gof.weibull.E
+  fit.weibull.E = fitdist(E,"weibull") #fit our distribution for a weibull distribution
+  fit.weibull.E$estimate[1] # shape sample
+  fit.weibull.E$estimate[2] # scale sample
+  boot.weibull.E =  bootdist(fit.weibull.E, niter = 100,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.weibull.E)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.weibull.E$estim[,1]))
+  abline(v = mean(boot.weibull.E$estim[,1]), col="black")
+  abline(v=fit.weibull.E$estimate[1],col="blue")
+  abline(v=boot.weibull.E$CI[3],col="red")
+  abline(v=boot.weibull.E$CI[5],col="red")
+  
+  plot(density(boot.weibull.E$estim[,2]))
+  abline(v = mean(boot.weibull.E$estim[,2]), col="black")
+  abline(v=fit.weibull.E$estimate[2],col="blue")
+  abline(v=boot.weibull.E$CI[4],col="red")
+  abline(v=boot.weibull.E$CI[6],col="red")
+  
+  
+  ks.test(E,"pweibull",shape=fit.weibull.E$estimate[1],scale=fit.weibull.E$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.weibull.E)
   
   #### REVENUEE DISTRIBUTION (rejected)
   fit.weibull.R = fitdist(R,"weibull")#fit our distribution for a normal distribution
-  gof.weibull.R = gofstat(fit.weibull.R)
-  gof.weibull.R
+  fit.weibull.R$estimate[1] # shape sample
+  fit.weibull.R$estimate[2] # scale sample
+  boot.weibull.R =  bootdist(fit.weibull.R, niter = 100,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.weibull.R)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.weibull.R$estim[,1]))
+  abline(v = mean(boot.weibull.R$estim[,1]), col="black")
+  abline(v=fit.weibull.R$estimate[1],col="blue")
+  abline(v=boot.weibull.R$CI[3],col="red")
+  abline(v=boot.weibull.R$CI[5],col="red")
+  
+  plot(density(boot.weibull.R$estim[,2]))
+  abline(v = mean(boot.weibull.R$estim[,2]), col="black")
+  abline(v=fit.weibull.R$estimate[2],col="blue")
+  abline(v=boot.weibull.R$CI[4],col="red")
+  abline(v=boot.weibull.R$CI[6],col="red")
+  
+  
+  ks.test(R,"pweibull",shape=fit.weibull.R$estimate[1],scale=fit.weibull.R$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.weibull.R)
   
   #### EXPONENTIAL DISTRIBUTION #####
   #### EMPLOYEE DISTRIBUTION (rejected)
