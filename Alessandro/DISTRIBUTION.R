@@ -1,6 +1,17 @@
 ls() #Environment
-rm(list = ls()) #remove all variables
+rm("prova") #remove all variables
 ls() #check varaibles
+
+library(fitdistrplus)
+library(logspline)
+library(moments)
+library(bbmle)
+library(actuar)
+library(VGAM)
+library(poweRlaw)
+library(fExtremes)
+library(AID)
+library(boot)
 
 set.seed(1000)
 #secondo il metodo del MLE, valutando il valore AIC, la distribuzione di Employee segue una distribuzione paretiana mentre
@@ -10,14 +21,17 @@ set.seed(1000)
 manufacturing = get(load("manufacturing.RData"))
 nrow(manufacturing)# 1.027.140 records
 
-
-install.packages('kimisc')
 library(kimisc)
 
-prova = sample.rows(manufacturing,700000,replace = FALSE)
+dat.1 = sample.rows(manufacturing,700000,replace = FALSE)
 
-E = prova$E
-R = prova$R
+E = dat.1$E
+skewness(E)# 95.79515 simmetria
+kurtosis(E)# 16186.75
+
+R = dat.1$R
+skewness(R)# 131.3853 simmetria
+kurtosis(R)# 23960.05
 
 
 par(mfrow=c(2,1))
@@ -33,32 +47,159 @@ par(mfrow=c(1,1))
   #### NORMAL DISTRIBUTION ####
   #### EMPLOYEE DISTRIBUTION (rejected)
   fit.norm.E = fitdist(E,"norm") #fit our distribution for a normal distribution
-  gof.norm.E = gofstat(fit.norm.E)
+  fit.norm.E$estimate[1] # mean sample
+  fit.norm.E$estimate[2] # sd sample
+  boot.norm.E =  bootdist(fit.norm.E, niter = 150,bootmethod="param",parallel="multicore",ncpus = 4)
+  summary(boot.norm.E)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.norm.E$estim[,1]))
+  abline(v = mean(boot.norm.E$estim[,1]), col="black")
+  abline(v=fit.norm.E$estimate[1],col="blue")
+  abline(v=boot.norm.E$CI[3],col="red")
+  abline(v=boot.norm.E$CI[5],col="red")
+  
+  plot(density(boot.norm.E$estim[,2]))
+  abline(v = mean(boot.norm.E$estim[,2]), col="black")
+  abline(v=fit.norm.E$estimate[2],col="blue")
+  abline(v=boot.norm.E$CI[4],col="red")
+  abline(v=boot.norm.E$CI[6],col="red")
+  
+ 
+  ks.test(E,"pnorm",mean=fit.norm.E$estimate[1],sd=fit.norm.E$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.norm.E)
   
   #### REVENUEE DISTRIBUTION (rejected)
   fit.norm.R = fitdist(R,"norm") #fit our distribution for a normal distribution
-  gof.norm.R = gofstat(fit.norm.R)
+  fit.norm.R$estimate[1] # mean sample
+  fit.norm.R$estimate[2] # sd sample
+  boot.norm.R =  bootdist(fit.norm.R, niter = 150,bootmethod="param",parallel="multicore",ncpus = 4)
+  summary(boot.norm.R)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  
+  #plot confidence intervall mean
+  plot(density(boot.norm.R$estim[,1]))
+  abline(v = mean(boot.norm.R$estim[,1]), col="black")
+  abline(v=fit.norm.R$estimate[1],col="blue")
+  abline(v=boot.norm.R$CI[3],col="red")
+  abline(v=boot.norm.R$CI[5],col="red")
+  
+  plot(density(boot.norm.R$estim[,2]))
+  abline(v = mean(boot.norm.R$estim[,2]), col="black")
+  abline(v=fit.norm.R$estimate[2],col="blue")
+  abline(v=boot.norm.R$CI[4],col="red")
+  abline(v=boot.norm.R$CI[6],col="red")
+  
+  ks.test(R,"pnorm",mean=fit.norm.R$estimate[1],sd=fit.norm.R$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.norm.R)
   
   
   #### LOG-NORM DISTRIBUTION ####
   #### EMPLOYEE DISTRIBUTION (rejected)
   fit.lnorm.E = fitdist(E,"lnorm") #fit our distribution for a log normal distribution
-  gof.lnorm.E = gofstat(fit.lnorm.E)
+  fit.lnorm.E$estimate[1] # meanlog sample
+  fit.lnorm.E$estimate[2] # sdlog sample
+  boot.lnorm.E =  bootdist(fit.lnorm.E, niter = 150,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.lnorm.E)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.lnorm.E$estim[,1]))
+  abline(v = mean(boot.lnorm.E$estim[,1]), col="black")
+  abline(v=fit.lnorm.E$estimate[1],col="blue")
+  abline(v=boot.lnorm.E$CI[3],col="red")
+  abline(v=boot.lnorm.E$CI[5],col="red")
+  
+  plot(density(boot.lnorm.E$estim[,2]))
+  abline(v = mean(boot.lnorm.E$estim[,2]), col="black")
+  abline(v=fit.lnorm.E$estimate[2],col="blue")
+  abline(v=boot.lnorm.E$CI[4],col="red")
+  abline(v=boot.lnorm.E$CI[6],col="red")
+  
+  
+  ks.test(E,"plnorm",meanlog=fit.lnorm.E$estimate[1],sdlog=fit.lnorm.E$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.lnorm.E)
   
   #### REVENUEE DISTRIBUTION (rejected)
   fit.lnorm.R = fitdist(R,"lnorm") #fit our distribution for a normal distribution
-  gof.lnorm.R = gofstat(fit.lnorm.R)
+  fit.lnorm.R$estimate[1] # meanlog sample
+  fit.lnorm.R$estimate[2] # sdlog sample
+  boot.lnorm.R =  bootdist(fit.lnorm.E, niter = 150,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.lnorm.R)
+  #oppure
+  #CI.mean.lnorm.R = quantile(boot.lnorm.R$estim[,1], c(0.025, 0.975))
+  #CI.sd.lnorm.R = quantile(boot.lnorm.R$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.lnorm.R$estim[,1]))
+  abline(v = mean(boot.lnorm.R$estim[,1]), col="black")
+  abline(v=fit.lnorm.R$estimate[1],col="blue")
+  abline(v=boot.lnorm.R$CI[3],col="red")
+  abline(v=boot.lnorm.R$CI[5],col="red")
+  
+  plot(density(boot.lnorm.R$estim[,2]))
+  abline(v = mean(boot.lnorm.R$estim[,2]), col="black")
+  abline(v=fit.lnorm.R$estimate[2],col="blue")
+  abline(v=boot.lnorm.R$CI[4],col="red")
+  abline(v=boot.lnorm.R$CI[6],col="red")
+  
+  
+  ks.test(R,"plnorm",meanlog=fit.lnorm.R$estimate[1],sdlog=fit.lnorm.R$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.lnorm.R)
   
   
   #### GAMMA DISTRIBUTION ####
   #### EMPLOYEE DISTRIBUTION (rejected)
-  fit.gamma.E = fitdist(E,"gamma") #fit our distribution for a log normal distribution
-  gof.gamma.E = gofstat(fit.gamma.E)
+  fit.gamma.E = fitdist(E,"gamma") #fit our distribution for a gamma  distribution
+  fit.gamma.E$estimate[1] # shape sample
+  fit.gamma.E$estimate[2] # rate sample
+  boot.gamma.E =  bootdist(fit.gamma.E, niter = 100,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.gamma.E)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.gamma.E$estim[,1]))
+  abline(v = mean(boot.gamma.E$estim[,1]), col="black")
+  abline(v=fit.gamma.E$estimate[1],col="blue")
+  abline(v=boot.gamma.E$CI[3],col="red")
+  abline(v=boot.gamma.E$CI[5],col="red")
+  
+  plot(density(boot.gamma.E$estim[,2]))
+  abline(v = mean(boot.gamma.E$estim[,2]), col="black")
+  abline(v=fit.gamma.E$estimate[2],col="blue")
+  abline(v=boot.gamma.E$CI[4],col="red")
+  abline(v=boot.gamma.E$CI[6],col="red")
+  
+  
+  ks.test(E,"pgamma",shape=fit.gamma.E$estimate[1],rate=fit.gamma.E$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.gamma.E)
   
   #### REVENUEE DISTRIBUTION (rejected)
   fit.gamma.R = fitdist(R,"gamma",lower=0)#fit our distribution for a normal distribution
-  gof.gamma.R = gofstat(fit.gamma.R)
-  gof.gamma.R
+  fit.gamma.R$estimate[1] # shape sample
+  fit.gamma.R$estimate[2] # rate sample
+  boot.gamma.R =  bootdist(fit.gamma.R, niter = 100,bootmethod="nonparam",parallel="multicore",ncpus = 4)
+  summary(boot.gamma.R)
+  #oppure
+  #CI.mean.norm.E = quantile(boot.norm.E$estim[,1], c(0.025, 0.975))
+  #CI.sd.norm.E = quantile(boot.norm.E$estim[,2], c(0.025, 0.975))
+  #plot confidence intervall
+  plot(density(boot.gamma.R$estim[,1]))
+  abline(v = mean(boot.gamma.R$estim[,1]), col="black")
+  abline(v=fit.gamma.R$estimate[1],col="blue")
+  abline(v=boot.gamma.R$CI[3],col="red")
+  abline(v=boot.gamma.R$CI[5],col="red")
+  
+  plot(density(boot.gamma.R$estim[,2]))
+  abline(v = mean(boot.gamma.R$estim[,2]), col="black")
+  abline(v=fit.gamma.R$estimate[2],col="blue")
+  abline(v=boot.gamma.R$CI[4],col="red")
+  abline(v=boot.gamma.R$CI[6],col="red")
   
   
   
@@ -173,7 +314,7 @@ par(mfrow=c(1,1))
   
   
   
-  #### INTERVALLI DI CONFIDENZA
+  #### INTERVALLI DI CONFIDENZA####
   #EMPLOYEE PARETO DISTRIBUTION
   fit = fitdist(food.R,"",lower = c(0, 0), start = list(scale = 1, shape = 1))
   fit$estimate
@@ -190,18 +331,6 @@ par(mfrow=c(1,1))
   
   
   
-}
-
-#P-Value
-{
-  ### DISTRIBUZIONE NORMALE ####
-  x = rnorm(100)
-  x = rlnorm(100)
-  fit = fitdist(x,"norm")
-  fit$estimate
-  
-  ks.test(x,"pnorm",mean=fit$estimate[1],sd=fit$estimate[2])# test that fitted parameter are statistically significant
-  ### DISTRIBU
 }
 
 

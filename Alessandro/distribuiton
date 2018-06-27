@@ -1,0 +1,13 @@
+For the distribution analysis I use the manufacturing dataset with 1.027.140 records. I have tested 10 different distribution with the fitdist library. For the first semple I used 700.000 records for manufacturing.
+-----  NORMAL DISTRIBUTION  -----
+- EMPLOYE: AIC = 8.996.060. The sample mean is in the quantile center. We can't rejectd the null'hypotesis but the p.value is <0.05/0.01. The sample sd is in the quantile center. We can't rejectd the null'hypotesis but the p.value is <0.05/0.01
+-REVENUE : AIC = 18.013.359. The sample mean is in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+
+------ LOG-NORMAL DISTRIBUTION -----
+- EMPLOYEE: AIC =  5.092.524 . The sample mean is in the quantile center. We can't rejectd the null'hypotesis but the p.value is <0.05/0.01. The sample sd is in the quantile center. We can't rejectd the null'hypotesis but the p.value is <0.05/0.01
+- REVENUE: AIC = 12.113.658.In this case p.value<0.05 and the sample mean and sd aren't in the quantile center.
+
+------ GAMMA DISTRIBUTION --------
+- EMPLOYEE : AIC = 5.472.443. The sample mean is in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+- REVENUE: 
+
