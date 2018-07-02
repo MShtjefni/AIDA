@@ -1,33 +1,45 @@
-distr <- c("norm", "lnorm", "gamma", "beta", "exp", "llogis", "weibull")
+distr <- c("norm", "lnorm", "gamma", "beta", "exp", "llogis", "weibull", "pareto")
 
-fitDistributions <- function(sample, distributionList=distr){
+fitDistributions <- function(sample, distributionList=distr, nSims=F){
+  if(! length(distributionList))
+    return (NULL)
   fits <- kstests <- adtests <- Ds <- list()
   if ("norm" %in% distributionList) {
+    print ("fitting norm...")
     fit.norm <-fitdist(sample, "norm",method = c("mle"))
-  
     #plot(fit.norm)
     fit.norm$estimate
     fit.norm$aic
-    n.sims <- 1000
-    stats <- replicate(n.sims, {
+    
+    stats <- replicate(nSims, {
       r <- rnorm(n = length(sample), mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])
       as.numeric(ks.test(r, "pnorm", mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])$statistic
       )      
     })
-  
-    fit <- logspline(stats)
+
     ks<-ks.test(sample,"pnorm", mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])
-    ad<-ad.test(sample,"pnorm", mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])
-    D<-1 - plogspline(ks$statistic, fit)
+    ad<-ad.test(sample,"pnorm", mean = fit.norm$estimate["mean"], sd = fit.norm$estimate["sd"])    
+    
+    if(nSims) {
+      fit <- logspline(stats)
+      D<-1 - plogspline(ks$statistic, fit)
+      Ds["norm"]<-D
+    }
+    
+    #boot <- bootdist(fit.norm, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.norm$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
+    
+    
     fits["norm"]<-list(fit.norm)
     kstests["norm"]<-list(ks)
     adtests["norm"]<-list(ad)
-    Ds["norm"]<-D
+    
     
   }
   #DISTRIBUZIONE LOGNORM
   if ("lnorm" %in% distributionList) {
-    
+    print ("fitting lognorm...")
     fit.lnorm<-fitdist(sample,"lnorm",method = c("mle"))
     #plot(fit.lnorm)
     fit.lnorm$estimate
@@ -36,85 +48,102 @@ fitDistributions <- function(sample, distributionList=distr){
     #a = bootdist(sample.lnorm, niter=100, ncpus  = 4,bootmethod="param")
     #quantile(a,prob=0.5)
     
-    n.sims <- 1000
-    stats <- replicate(n.sims, {   
+    stats <- replicate(nSims, {   
       r <- rlnorm(n = length(sample), meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2]  )
       as.numeric(ks.test(r, "plnorm", meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2])$statistic
       )      
     })
-    fit <- logspline(stats)
+    
     ks <- ks.test(sample,"plnorm",meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2])
     ad <- ad.test(sample,"plnorm",meanlog = fit.lnorm$estimate[1] , sdlog = fit.lnorm$estimate[2])
-    D <- 1 - plogspline(ks$statistic, fit)
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1 - plogspline(ks$statistic, fit)
+      Ds["lnorm"]<-D
+    }
+    
+    #boot <- bootdist(fit.lnorm, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.lnorm$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["lnorm"]<-list(fit.lnorm)
     kstests["lnorm"]<-list(ks)
     adtests["lnorm"]<-list(ad)
-    Ds["lnorm"]<-D
+   
     
   }
   
   #GAMMA DISTRIBUTION 
   if ("gamma" %in% distributionList)
   {
+    print ("fitting gamma...")
     fit.gamma<-fitdist(sample,"gamma",method = c("mle"),lower=0)
     #plot(fit.gamma)
     fit.gamma$estimate
     fit.gamma$aic
-    n.sims <- 1000
-    stats <- replicate(n.sims, {   
+    stats <- replicate(nSims, {   
       r <- rgamma(n = length(sample), shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2]  )
       as.numeric(ks.test(r, "pgamma", shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2])$statistic
       )      
     })
     
-    fit <- logspline(stats)
     ks <- ks.test(sample,"pgamma",shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2])
     ad <- ad.test(sample,"pgamma",shape = fit.gamma$estimate[1] , rate = fit.gamma$estimate[2])
-    D <- 1 - plogspline(ks$statistic, fit)
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1 - plogspline(ks$statistic, fit)
+      Ds["gamma"]<-D
+    }
+    
+    #boot <- bootdist(fit.gamma, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.gamma$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["gamma"]<-list(fit.gamma)
     kstests["gamma"]<-list(ks)
     adtests["gamma"]<-list(ad)
-    Ds["gamma"]<-D
   }
   
   #BETA
   if ("beta" %in% distributionList)
   {
-    
+    print ("fitting beta...")
     betaSample<-sample/(max(sample)+.1)
     fit.beta<-fitdist(betaSample, "beta")
     #plot(fit.beta)
     fit.beta$estimate
     fit.beta$aic
-    
-    n.sims <- 2000
-    stats <- replicate(n.sims, {   
+   
+    stats <- replicate(nSims, {   
       r <- rbeta(n = length(sample), shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])
       as.numeric(ks.test(r, "pbeta", shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])$statistic
       )      
     })
     
-    fit <- logspline(stats)
     ks <- ks.test(sample,"pbeta",shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])
     ad <- ad.test(sample,"pbeta",shape1 = fit.beta$estimate[1] , shape2 = fit.beta$estimate[2])
-    D <- 1 - plogspline(ks$statistic, fit)
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1 - plogspline(ks$statistic, fit)
+      Ds["beta"]<-D
+    }
+    #boot <- bootdist(fit.beta, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.beta$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["beta"]<-list(fit.beta)
     kstests["beta"]<-list(ks)
     adtests["beta"]<-list(ad)
-    Ds["beta"]<-D
+    
   }
   
   #WEIBULL
   if ("weibull" %in% distributionList)
   {
-    
+    print ("fitting weibull...")
     
     fit.weibull <- fitdist(sample, "weibull")
     fit.weibull$estimate
     fit.weibull$aic
     
-    n.sims <- 1000
-    stats <- replicate(n.sims, {      
+    stats <- replicate(nSims, {      
       r <- rweibull(n = length(sample)
                     , shape= fit.weibull$estimate["shape"]
                     , scale = fit.weibull$estimate["scale"]
@@ -126,146 +155,251 @@ fitDistributions <- function(sample, distributionList=distr){
       )      
     })
     
-    fit <- logspline(stats)
     ks <- ks.test(sample, "pweibull", shape= fit.weibull$estimate["shape"],scale = fit.weibull$estimate["scale"])
     ad <- ad.test(sample, "pweibull", shape= fit.weibull$estimate["shape"],scale = fit.weibull$estimate["scale"])
-    D <- 1 - plogspline(ks$statistic, fit)
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1 - plogspline(ks$statistic, fit)
+      Ds["weibull"]<-D
+    }
+    #boot <- bootdist(fit.weibull, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.weibull$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["weibull"]<-list(fit.weibull)
     kstests["weibull"]<-list(ks)
     adtests["weibull"]<-list(ad)
-    Ds["weibull"]<-D
+    
     
   }
   
   #ESPONENZIALE
   if ("exp" %in% distributionList)
   {
+    print ("fitting exp...")
     fit.exp<-fitdist(sample,"exp",method = c("mle"),lower=0.1)
     #plot(fit.exp)
     fit.exp$estimate
     fit.exp$aic
     
-    n.sims <- 1000
-    stats <- replicate(n.sims, {   
+    stats <- replicate(nSims, {   
       r <- rexp(n = length(sample), rate = fit.exp$estimate[1]  )
       as.numeric(ks.test(r, "pexp", rate = fit.exp$estimate[1])$statistic
       )      
     })
     
-    fit <- logspline(stats)
     ks <- ks.test(sample,"pexp",rate = fit.exp$estimate[1] )
     ad <- ad.test(sample,"pexp",rate = fit.exp$estimate[1] )
-    D <- 1 - plogspline(ks$statistic, fit)
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1 - plogspline(ks$statistic, fit)
+      Ds["exp"]<-D
+    }
+    
+    #boot <- bootdist(fit.exp, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.exp$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["exp"]<-list(fit.exp)
     kstests["exp"]<-list(ks)
-    Ds["exp"]<-D
-    
   }
   
   #GEOMETRICA
   if ("geom" %in% distributionList & all(sample==floor(sample)))
   {
+    print ("fitting geom...")
     fit.geom<-fitdist(sample,"geom",method = c("mle"))
     #plot(fit.exp)
     fit.geom$estimate
     fit.geom$aic
     
-    n.sims <- 1000
-    stats <- replicate(n.sims, {   
+    stats <- replicate(nSims, {   
       r <- rgeom(n = length(sample), prob = fit.geom$estimate[1]  )
       as.numeric(ks.test(r, "pgeom", prob = fit.geom$estimate[1])$statistic
       )      
     })
     
-    fit <- logspline(stats)
     ks <- ks.test(sample,"pgeom",prob = fit.geom$estimate[1] )
     ad <- ad.test(sample,"pgeom",prob = fit.geom$estimate[1] )
-    D <- 1- plogspline(ks$statistic, fit)
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1- plogspline(ks$statistic, fit)
+      Ds["geom"]<-D
+    }
+    
+    #boot <- bootdist(fit.geom, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.geom$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["geom"]<-list(fit.geom)
     kstests["geom"]<-list(ks)
     adtests["geom"]<-list(ad)
-    Ds["geom"]<-D
   }
   
   
   #LOG LOGISTICA
   if ("llogis" %in% distributionList)
   {
+    print ("fitting Log logis...")
     #nella distribuzione lloglogistica, i parametri devo essere positivi
     fit.llogis<- fitdist(sample ,"llogis", start = list(shape = 1))
     #plot(fit.llogis)
     fit.llogis$estimate
     fit.llogis$aic
     
-    n.sims <- 2000
-    stats <- replicate(n.sims, {   
+    stats <- replicate(nSims, {   
       r <- rllogis(n = length(sample), shape = fit.llogis$estimate[1]  )
       as.numeric(ks.test(r, "pllogis",  shape = fit.llogis$estimate[1])$statistic
       )      
     })
     
-    fit <- logspline(stats)
     ks <- ks.test(sample,"pllogis", shape = fit.llogis$estimate[1] )
     ad <- ad.test(sample,"pllogis", shape = fit.llogis$estimate[1] )
-    D <- 1- plogspline(ks$statistic, fit)
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1- plogspline(ks$statistic, fit)
+      Ds["llogis"]<-D
+    }
+    #boot <- bootdist(fit.llogis, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.llogis$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["llogis"]<-list(fit.llogis)
     kstests["llogis"]<-list(ks)
     adtests["llogis"]<-list(ad)
-    Ds["llogis"]<-D
+    
   }
   
   
   #POWERLAW FOR CONTINUOUS ATTRIBUTE
   if ("pareto" %in% distributionList)
   {
-    fit.pareto <- fitdist(sample, "pareto1", lower = c(0, 0), start = list(min = unname(quantile(sample, .1)), shape = 1))
+    print ("fitting Pareto...")
+    fit.pareto <- fitdist(sample,"pareto",lower = c(0, 0), start = list(scale = min(sample), shape = 1))
+    #fit.pareto <- mle2(LL3(myData = sample), start=list(m=0.001, s=1.001), method = "L-BFGS-B", lower = c(m=0.001, s=1.001))
     fit.pareto$estimate
     fit.pareto$aic
     
-    ks.test(sample,"ppareto1", min=fit.pareto$estimate[1] , shape = fit.pareto$estimate[2])
+    ks.test(sample,"ppareto", scale=fit.pareto$estimate[1] , shape = fit.pareto$estimate[2])
     
-    n.sims <- 200
-    stats <- replicate(n.sims, {   
+    stats <- replicate(nSims, {   
       r <- rpareto(n = length(sample), shape = fit.pareto$estimate[1]  )
       as.numeric(ks.test(r, "ppareto", scale=fit.pareto$estimate[1] , shape = fit.pareto$estimate[2])$statistic
       )      
     })
     
-    fit <- logspline(stats)
     ks <- ks.test(sample,"ppareto", scale=fit.pareto$estimate[1] , shape = fit.pareto$estimate[2])
     ad <- ad.test(sample,"ppareto", scale=fit.pareto$estimate[1] , shape = fit.pareto$estimate[2])
-    D <- 1- plogspline(ks$statistic, fit)
-    
+    if(nSims) {
+      fit <- logspline(stats)
+      D <- 1- plogspline(ks$statistic, fit)
+      Ds["pareto"]<-D
+    }
+    #boot <- bootdist(fit.pareto, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.pareto$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
     fits["pareto"]<-list(fit.pareto)
     kstests["pareto"]<-list(ks)
     adtests["pareto"]<-list(ad)
-    Ds["pareto"]<-D
+    
+    "if (all(sample==floor(sample)))
+      pl<-displ$new(sample)
+    else
+      pl<-conpl$new(sample)
+    pl$setXmin(estimate_xmin(pl))
+    "
   }
+
   if ("beta" %in% distributionList)
     gof<-list(gofstat(fits[- which(names(fits)=="beta")]))
   else
     gof<-list(gofstat(fits))
-  return (list("fits"=fits,"ks"= kstests,"ad" = adtests, "D" = Ds, "gof"=gof))
-
+  return (list("sample"=sample, "fits"=fits,"ks"= kstests,"ad" = adtests, "D" = Ds, "gof"=gof))
   
 }
 
+getSortedPValue<-function(resultSet, testColumn='ks') {
+  pValues<-c()
+  #names(pValues)<-names(resultSet[[testColumn]])
+  for (distribution in resultSet[[testColumn]]) {
+    pValues<-append(pValues,distribution$p.value)
+  }
+  names(pValues)<-names(resultSet[[testColumn]])
+  return (sort(pValues, decreasing = T))
+}
 
 sampleAndTest <-function(data) {
   #data is a data structure(eg: list, dataframe) containing R and E columns
   samples <- results <- list()
-  for(i in seq(100, 1000, 100)) {
-    samples[paste(toString(i), "R")]<-list(sample(subset(data$R+.1, data$R>=0), i))
-    samples[paste(toString(i), "E")]<-list(sample(subset(data$E+1, data$E>=0), i))
-    results[paste(toString(i), "R")]<-list(fitDistributions(samples[paste(toString(i), "R")][[1]]))
-    results[paste(toString(i), "E")]<-list(fitDistributions(samples[paste(toString(i), "E")][[1]]))
-  }
-  for(i in seq(1500, 10000, 500)) {
-    samples[paste(toString(i), "R")]<-list(sample(subset(data$R+.1, data$R>=0), i))
-    samples[paste(toString(i), "E")]<-list(sample(subset(data$E+1, data$E>=0), i))
-    results[paste(toString(i), "R")]<-list(fitDistributions(samples[paste(toString(i), "R")][[1]]))
-    results[paste(toString(i), "E")]<-list(fitDistributions(samples[paste(toString(i), "E")][[1]]))
-  }
-  
+  for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) 
+    
+    if (i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
+      print (paste("testing R and E distribution on", toString(i), "elements."))
+      sampleR<-sample(subset(data$R+.1, data$R>=0), i)
+      sampleE<-sample(subset(data$E+1, data$E>=0), i)
+      #results[paste(toString(i), "R")]<-list(list("sample"=list(sampleR), "results"=list(fitDistributions(sampleR, nSims = 200))))
+      #results[paste(toString(i), "E")]<-list(list("sample"=list(sampleE), "results"=list(fitDistributions(sampleE, nSims = 200))))
+      results[paste(toString(i), "R")]<-list(fitDistributions(sampleR, nSims = 200))
+      results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
+    }
   return (results)
 }
+
+'
+{
+aidaS<-sampleAndTest(aidat)
+save(aidaS, file=paste(wdir, "files/aidaS.RData", sep=""))
+aida7<-sampleAndTest(subset(aidat, aidat$Year==2007))
+save(aida7, file=paste(wdir, "files/aida7.RData", sep=""))
+aida8<-sampleAndTest(subset(aidat, aidat$Year==2008))
+save(aida8, file=paste(wdir, "files/aida8.RData", sep=""))
+aida9<-sampleAndTest(subset(aidat, aidat$Year==2009))
+save(aida9, file=paste(wdir, "files/aida9.RData", sep=""))
+aida10<-sampleAndTest(subset(aidat, aidat$Year==2010))
+save(aida10, file=paste(wdir, "files/aida10.RData", sep=""))
+aida11<-sampleAndTest(subset(aidat, aidat$Year==2011))
+save(aida11, file=paste(wdir, "files/aida11.RData", sep=""))
+aida12<-sampleAndTest(subset(aidat, aidat$Year==2012))
+save(aida12, file=paste(wdir, "files/aida12.RData", sep=""))
+aida13<-sampleAndTest(subset(aidat, aidat$Year==2013))
+save(aida13, file=paste(wdir, "files/aida13.RData", sep=""))
+aida14<-sampleAndTest(subset(aidat, aidat$Year==2014))
+save(aida14, file=paste(wdir, "files/aida14.RData", sep=""))
+aida15<-sampleAndTest(subset(aidat, aidat$Year==2015))
+save(aida15, file=paste(wdir, "files/aida15.RData", sep=""))
+
+manS<-sampleAndTest(manufacturing)
+save(manS, file=paste(wdir, "files/manS.RData", sep=""))
+man7<-sampleAndTest(subset(manufacturing, manufacturing$Year==2007))
+save(man7, file=paste(wdir, "files/man7.RData", sep=""))
+man8<-sampleAndTest(subset(manufacturing, manufacturing$Year==2008))
+save(man8, file=paste(wdir, "files/man8.RData", sep=""))
+man9<-sampleAndTest(subset(manufacturing, manufacturing$Year==2009))
+save(man9, file=paste(wdir, "files/man9.RData", sep=""))
+man10<-sampleAndTest(subset(manufacturing, manufacturing$Year==2010))
+save(man10, file=paste(wdir, "files/man10.RData", sep=""))
+man11<-sampleAndTest(subset(manufacturing, manufacturing$Year==2011))
+save(man11, file=paste(wdir, "files/man11.RData", sep=""))
+man12<-sampleAndTest(subset(manufacturing, manufacturing$Year==2012))
+save(man12, file=paste(wdir, "files/man12.RData", sep=""))
+man13<-sampleAndTest(subset(manufacturing, manufacturing$Year==2013))
+save(man13, file=paste(wdir, "files/man13.RData", sep=""))
+man14<-sampleAndTest(subset(manufacturing, manufacturing$Year==2014))
+save(man14, file=paste(wdir, "files/man14.RData", sep=""))
+man15<-sampleAndTest(subset(manufacturing, manufacturing$Year==2015))
+save(man15, file=paste(wdir, "files/man15.RData", sep=""))
+
+alim <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='alimentari'))
+save(alim, file=paste(wdir, "files/alim.RData", sep=""))
+auto <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='autoveicoli'))
+save(auto, file=paste(wdir, "files/auto.RData", sep=""))
+bev <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='bevande'))
+save(bev, file=paste(wdir, "files/bev.RData", sep=""))
+legno <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='legno'))
+save(legno, file=paste(wdir, "files/legno.RData", sep=""))
+miner <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='minerali'))
+save(miner, file=paste(wdir, "files/miner.RData", sep=""))
+pc <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='computer'))
+save(pc, file=paste(wdir, "files/pc.RData", sep=""))
+pelle <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='pelle'))
+save(pelle, file=paste(wdir, "files/pelle.RData", sep=""))
+tess <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='tessile'))
+save(tess, file=paste(wdir, "files/tess.RData", sep=""))
+}
+'
