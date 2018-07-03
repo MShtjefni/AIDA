@@ -316,7 +316,6 @@ fitDistributions <- function(sample, distributionList=distr, nSims=F){
 
 getSortedPValue<-function(resultSet, testColumn='ks') {
   pValues<-c()
-  #names(pValues)<-names(resultSet[[testColumn]])
   for (distribution in resultSet[[testColumn]]) {
     pValues<-append(pValues,distribution$p.value)
   }
@@ -324,6 +323,12 @@ getSortedPValue<-function(resultSet, testColumn='ks') {
   return (sort(pValues, decreasing = T))
 }
 
+getSortedGof<-function(resultSet, measureColumn='aic') {
+  gof<-sort(resultSet$gof[[1]][[measureColumn]])
+  #names(pValues)<-names(resultSet[[testColumn]])
+  return (gof)
+  
+}
 sampleAndTest <-function(data) {
   #data is a data structure(eg: list, dataframe) containing R and E columns
   samples <- results <- list()
@@ -339,6 +344,23 @@ sampleAndTest <-function(data) {
       results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
     }
   return (results)
+}
+
+
+getMinSampleSize<-function(samples, pValue=.05, colName='R') {
+  
+  if (colName=='R')
+    l<-seq(1, length(samples),2)
+  else
+    l<-seq(2, length(samples),2)
+  for (i in l) {
+    pV<-getSortedPValue(samples[[i]])
+    if (max(pV)>=pValue)
+      s<-i
+  }
+  if(exists("s"))
+    return (names(samples)[s])
+  return (NULL)
 }
 
 '
@@ -385,21 +407,78 @@ save(man14, file=paste(wdir, "files/man14.RData", sep=""))
 man15<-sampleAndTest(subset(manufacturing, manufacturing$Year==2015))
 save(man15, file=paste(wdir, "files/man15.RData", sep=""))
 
-alim <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='alimentari'))
+alim <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="alimentari"))
 save(alim, file=paste(wdir, "files/alim.RData", sep=""))
-auto <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='autoveicoli'))
+auto <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="autoveicoli"))
 save(auto, file=paste(wdir, "files/auto.RData", sep=""))
-bev <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='bevande'))
+bev <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="bevande"))
 save(bev, file=paste(wdir, "files/bev.RData", sep=""))
-legno <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='legno'))
+legno <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="legno"))
 save(legno, file=paste(wdir, "files/legno.RData", sep=""))
-miner <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='minerali'))
+miner <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="minerali"))
 save(miner, file=paste(wdir, "files/miner.RData", sep=""))
-pc <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='computer'))
+pc <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="computer"))
 save(pc, file=paste(wdir, "files/pc.RData", sep=""))
-pelle <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='pelle'))
+pelle <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="pelle"))
 save(pelle, file=paste(wdir, "files/pelle.RData", sep=""))
-tess <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=='tessile'))
+tess <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="tessile"))
 save(tess, file=paste(wdir, "files/tess.RData", sep=""))
 }
 '
+### EDIT varName TO INSPECT OTHER RESULTS: EG aidaS, aida7, etc. ###
+varName="aida7"
+tryCatch(
+  samples<-eval(parse(text=varName)),
+error = function(e) {
+  load(paste(wdir, "files/", varName, ".RData", sep=""))
+  samples<-eval(parse(text=varName))
+  }
+)
+
+pValues<-aicS<-bicS<-list()
+for (sample in samples) {
+  pv<-getSortedPValue(sample)
+  pValues<-append(pValues,list(pv)) 
+  aic<-getSortedGof(sample,measureColumn = 'aic')
+  aicS<-append(aicS,list(aic))
+  bic<-getSortedGof(sample,measureColumn = 'bic')
+  bicS<-append(bicS,list(bic)) }
+names(pValues)<-names(aicS)<-names(bicS)<-names(samples) 
+
+## EDIT SAMPLE VAR TO HAVE STATISTICS OF ANOTHER SAMPLE ##
+distributionColors<-list("norm"="red","llogis"="blue", "lnorm"="yellow","pareto"="black","exp"="aquamarine4","weibull"="blueviolet","gamma"="green")
+sample<-samples$`100 E`
+x<-sample$sample
+fits<-sample$fits
+hist(x, prob=T, breaks="fd", xlab="growth_random rate", col="grey", main="Empirical small growth Rate Distribution")
+#col: 1=black, 2=red, 3=green, 4=blue, 5=light blue, 6=violet, 7=yellow, 8=grey
+#curve(dnorm(x, fits$norm$estimate[1], fits$norm$estimate[2]), add=T,col = "red", lwd=2)
+curve(dllogis(x, fits$llogis$estimate[1]), add=T,col = distributionColors$llogis, lwd=2)
+curve(dlnorm(x, fits$lnorm$estimate[1], fits$lnorm$estimate[2]), add=T,col = distributionColors$lnorm, lwd=2)
+curve(dpareto(x,  fits$pareto$estimate[1] , fits$pareto$estimate[2]), add=T,col = distributionColors$pareto , lwd=2)
+curve(dexp(x, fits$exp$estimate[1]), add=T,col = distributionColors$exp, lwd=2)
+curve(dweibull(x, fits$weibull$estimate[1], fits$weibull$estimate[2]), add=T,col = distributionColors$weibull, lwd=2)
+curve(dgamma(x, fits$gamma$estimate[1], fits$gamma$estimate[2]), add=T,col = distributionColors$gamma, lwd=2)
+legend("topright", legend=c("Pareto", "Log Norm", "Weibull"),
+       col=as.character(distributionColors[c("pareto","lnorm","weibull")]), lty=1, cex=.8)
+#BETA SAMPLE (VALUES BETWEEN 0 AND 1)
+x<-x/(max(x)+.1)
+hist(x, prob=T, breaks="fd", xlab="growth_random rate", col="grey", main="Empirical small growth Rate Distribution")
+curve(dbeta(x, fits$beta$estimate[1], fits$beta$estimate[2]), add=T,col = "red", lwd=2)
+
+### QQPLOTS
+y <- rlnorm(length(x), fits$lnorm$estimate[1], fits$lnorm$estimate[2])
+qqplot(y, x, xlab="Theoretical Quantiles", ylab = "Empirical Quantiles")
+qqline(rlnorm(length(x), fits$lnorm$estimate[1], fits$lnorm$estimate[2]), col = 2,lwd=2,lty=2, distribution = qlnorm)
+
+#CDF
+plot(ecdf(sample$sample),cex=0.5, col="red")
+curve(ppareto(x,fits$pareto$estimate[1], fits$pareto$estimate[2]), add = T , cex=0.5, col="blue")
+curve(plnorm(x,fits$lnorm$estimate[1], fits$lnorm$estimate[2]), add = T ,  cex=0.5,col="yellow")
+curve(pnorm(x,fits$norm$estimate[1], fits$norm$estimate[2]), add = T , cex=0.5, col="brown")
+
+
+# For fitdistr objects:
+boot <- bootdist(fits$norm, bootmethod = "nonparam", niter = 1000, ncpus = 6) #uses parametric bootsrap to generate 
+# 1000 samples and compute their parameters according to the given distribution
+boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters

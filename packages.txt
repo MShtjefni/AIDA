@@ -1,6 +1,14 @@
 dplyr
-smooth  
+smooth
 stats4
 fitdistrplus
 bbmle
-rmutil 
+rmutil
+logspline
+moments
+actuar
+VGAM
+poweRlaw
+fExtremes
+corrplot
+goftest
