@@ -1,4 +1,4 @@
-wdir <- ""
+#wdir <- ""
 source(paste(wdir, "first_analysis.r", sep=""))
 
 View(nine_year_firms2)
@@ -8,6 +8,23 @@ nine_year_firms2$Size[50 <= nine_year_firms2$E & nine_year_firms2$E <= 249] <- "
 nine_year_firms2$Size[nine_year_firms2$E >= 250] <- "Large"
 
 
+getGrowth <- function(data) {
+  data <- arrange(data, data$TaxID, data$Year)
+  growths <- group_by(data,TaxID, Year)
+  growths <- summarize(growths, Revenue=sum(R))
+  data$Growth <- NA
+  for (row in 2:nrow(growths)) {
+    if (growths[row, "TaxID"] != growths[row-1, "TaxID"]) next
+    if ((growths[row, "Year"] - growths[row-1, "Year"]) != 1) next
+    #random_group_by$Growth[row] <- log10(random_group_by[row, "Revenue"]) - log10(random_group_by[row-1, "Revenue"])
+    print(row)
+    gr <- log10(growths[row, "Revenue"]/growths[row-1, "Revenue"])
+    data$Growth[row] <- as.numeric(gr)
+    #by_firm$growth_medium[row] <- (log10(by_firm[row, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row, "Year"])]) - (log10(by_firm[row-1, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row-1, "Year"])])
+  }
+  
+  return (data)
+}
 
 subsectorsGrowth <- function(data) {
   data$R<-data$R + 1
@@ -179,4 +196,58 @@ curve(dcauchy(x, 0.007378846, 0.1091681), add=T,col = "red", lwd=2)
 legend("topright", c("Laplace fit", "Cauchy fit"), col=c("blue", "red"), lwd=3)
 
 gofstat(fit4)
+
+
+ks.test(growth, "pcauchy", 0, 0.0623094)
+ks.test(growth, "pnorm", 0.0056724, 0.3310969)
+#plot(growth, pcauchy(growth, 0.0056724, 0.3310969))
+plot(ecdf(rcauchy(length(growth), 0.0056724, 0.3310969)), col="blue", cex=0.5)
+plot(ecdf(rlaplace(length(growth),  0.00302667, 0.07369791)), col="blue", cex=0.5)
+lines(ecdf(growth), lwd=3, col="red")
+
+
+n.sims <- 500
+stats <- replicate(n.sims, {
+  r <- rlaplace(length(x)
+                , 0.00438608
+                , 0.10486774)
+  as.numeric(ks.test(r
+                     , "plaplace"
+                     , 0.00438608
+                     , 0.10486774)$statistic)})
+
+fit5 <- logspline(stats)
+
+1 - plogspline(ks.test(x
+                       , "plaplace"
+                       , 0.00438608
+                       , 0.10486774)$statistic
+               , fit5
+)
+
+# yx <- rnorm(100000)
+# xy <- rnorm(100000)
+# mean(yx)
+#z.test(yx, sigma.x = 1, yx, sigma.y = 1, mu=0, "two.sided", TRUE)
+#z.test(growth,sigma.x=sd(growth))
+#Ask about paired z-test with two dependent samples
+#Ask about the chi-sqaure test (is it suitable to determine goodness of fit?)
+min(growth)
+bins <-(seq(min(growth),max(growth),0.05))
+bins
+#Chi-square test
+
+growth.cut<-cut(growth,breaks=seq(min(growth),max(growth),0.05), include.lowest = TRUE) ##binning data
+table(growth.cut) ## binned data table
+growth.cut
+
+p=c()
+for (i in 1:(length (seq(min(growth),max(growth),0.05)))-1) {
+  p[i] <- plaplace(bins[i+1],0,0.0623094)-plaplace(bins[i],0,0.0623094)
+}
+
+f.os<-c()
+for (j in 1:50) {f.os[j]<- table(growth.cut)[[j]]}
+
+chisq.test(x=f.os,p=p)
   

@@ -4,3 +4,11 @@ stats4
 fitdistrplus
 bbmle
 rmutil
+logspline
+moments
+actuar
+VGAM
+poweRlaw
+fExtremes
+corrplot
+goftest
