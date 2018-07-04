@@ -14,8 +14,7 @@ aidat$Ateco <- as.integer(as.character(aidat$Ateco))
 aidat$TaxID <- as.numeric(as.character(aidat$TaxID))
 aidat$Year <- as.integer(as.character(aidat$Year))
 aidat[which(names(aidat) %in% c("TradingRegion","TradingProvince"))] <- NULL
-inflactions <- c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011) #inflations from 2007 to 2017, by ISTAT
-aidat$Infl <- NA
+inflations <- c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011) #inflations from 2007 to 2017, by ISTAT
 
 #for (i in seq(9)) {aidat$Infl[aidat$Year==2006+i]<-inflations[i]}
 
@@ -45,25 +44,48 @@ altreManuf<-[32,33)
 riparaz<-[33,34)
 "
 "Apply inflaction function"
-applyInflaction <- function(data, inflactions=c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011)) {
+applyInflation <- function(data, inflations=c(1, .032, .007, .016, .027, .03, .011, .002, -0.001, -0.001, .011)) {
   if ("Infl" %in% colnames(data)) 
     return (data)
     
   data$Infl <- NA
   for (i in seq(2,9)) {
-    inflactions[i]<-(inflactions[i-1]*(1+inflactions[i]))
-    print(inflactions[i])
-    data$Infl[data$Year==2006+i]<-inflactions[i]
+    inflations[i]<-(inflations[i-1]*(1+inflations[i]))
+    print(inflations[i])
+    data$Infl[data$Year==2006+i]<-inflations[i]
   }
-  
+  data$Infl[is.na(data$Infl)]<-1
   data$P <- data$P/data$Infl
   data$R <- data$R/data$Infl
   data$B <- data$B/data$Infl
   return(data)
 }
 
-"Subset of the only manufacturing firms. Adding subsector column"
+addGeoArea<-function(data) {
+  if ("GeoArea" %in% colnames(data)) 
+    return (data)
+  #VARIABILE AREA GEOGRAFICA NORD, CENTRO, SUD
+  #SUD--> Abruzzo, Basilicata, Calabria, Campania, Molise, Puglia, Sardegna, Sicilia
+  data$GeoArea="Sud"
+  #NORD-->Liguria, Lombardia, Piemonte, Valle d'Aosta, Emilia-Romagna, Friuli-Venezia Giulia, Trentino-Alto Adige, Veneto
+  data$GeoArea[data$Region=="Liguria" | data$Region=="Lombardia" |data$Region=="Piemonte" |data$Region=="Valle d'Aosta/Vall?e d'Aoste" |data$Region=="Emilia-Romagna"|data$Region=="Friuli-Venezia Giulia"|data$Region=="Trentino-Alto Adige"|data$Region=="Veneto" ]= "Nord"
+  #CENTRO--> Lazio, Marche, Toscana ed Umbria
+  data$GeoArea[data$Region=="Lazio" |data$Region=="Marche" |data$Region=="Toscana" |data$Region=="Umbria"  ]= "Centro"
 
+  return(data)
+}
+
+addSize <- function(data) {
+  if ("Size" %in% colnames(data)) 
+    return (data)
+  data$Size <- "Medium"
+  data$Size[data$E <= 49] <- "Small"
+  data$Size[data$E >= 250] <- "Large"
+  
+  return(data)
+}
+
+"Subset of the only manufacturing firms. Adding subsector column"
 addSubsectorColumn <- function(data) {
   subsectors<-list(subsector=c('alimentari','bevande','tabacco','tessile','confezAbbigl','pelle','legno','carta','stampa', 'fabbrCoke','prodChimici','prodFarm','gomma','minerali','metallurgia','prodMetallo','computer','appElettriche','macchinari','autoveicoli', 'mezziTrasp', 'mobili', 'altreManuf', 'riparaz'), min=c(100000,110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000), max=c(110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000,340000))
   data$SubSector='NA'
@@ -72,7 +94,7 @@ addSubsectorColumn <- function(data) {
   return (data) }
 
   
-  aidat<-applyInflaction(aidat)
+  aidat<-applyInflation(aidat)
   manufacturing <- subset(aidat,aidat$Ateco>=101100 & aidat$Ateco<=332009 & aidat$Year>=2007 & aidat$Year<2016) #subset containing all the manufacturing firms from original dataset
   manufacturing <- addSubsectorColumn(manufacturing)
   manufacturing <- dplyr::filter(manufacturing,R>=0 | is.na(R)) #removing all the entries with negative(<0) revenue

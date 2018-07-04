@@ -306,6 +306,69 @@ fitDistributions <- function(sample, distributionList=distr, nSims=F){
     "
   }
 
+  # LAPLACE
+  if ("laplace" %in% distributionList) {
+    print ("fitting laplace...")
+    fit.laplace <-fitdist(sample, "laplace",method = c("mle"))
+    #plot(fit.norm)
+    
+    stats <- replicate(nSims, {
+      r <- rlaplace(n = length(sample), location = fit.laplace$estimate["location"], scale = fit.laplace$estimate["scale"])
+      as.numeric(ks.test(r, "plaplace", location = fit.laplace$estimate["location"], scale = fit.laplace$estimate["scale"])$statistic
+      )      
+    })
+    
+    ks<-ks.test(sample, "plaplace", location = fit.laplace$estimate["location"], scale = fit.laplace$estimate["scale"])
+    ad<-ad.test(sample, "plaplace", location = fit.laplace$estimate["location"], scale = fit.laplace$estimate["scale"])
+    
+    if(nSims) {
+      fit <- logspline(stats)
+      D<-1 - plogspline(ks$statistic, fit)
+      Ds["laplace"]<-D
+    }
+    
+    #boot <- bootdist(fit.norm, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.norm$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
+    
+    fits["laplace"]<-list(fit.laplace)
+    kstests["laplace"]<-list(ks)
+    adtests["laplace"]<-list(ad)
+    
+  }
+  
+  #CAUCHY 
+  if ("cauchy" %in% distributionList) {
+    print ("fitting cauchy...")
+    fit.cauchy <-fitdist(sample, "cauchy",method = c("mle"))
+    #plot(fit.norm)
+    
+    stats <- replicate(nSims, {
+      r <- rcauchy(n = length(sample), fit.cauchy$estimate[1], fit.cauchy$estimate[2])
+      as.numeric(ks.test(r, "pcauchy", fit.cauchy$estimate[1], fit.cauchy$estimate[2])$statistic
+      )      
+    })
+    
+    ks<-ks.test(sample, "pcauchy", fit.cauchy$estimate[1], fit.cauchy$estimate[2])
+    ad<-ad.test(sample, "pcauchy", fit.cauchy$estimate[1], fit.cauchy$estimate[2])
+    
+    if(nSims) {
+      fit <- logspline(stats)
+      D<-1 - plogspline(ks$statistic, fit)
+      Ds["cauchy"]<-D
+    }
+    
+    #boot <- bootdist(fit.norm, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.norm$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
+    
+    fits["cauchy"]<-list(fit.cauchy)
+    kstests["cauchy"]<-list(ks)
+    adtests["cauchy"]<-list(ad)
+    
+  }
+  
+  
   if ("beta" %in% distributionList)
     gof<-list(gofstat(fits[- which(names(fits)=="beta")]))
   else
@@ -347,6 +410,24 @@ sampleAndTest <-function(data) {
 }
 
 
+sampleAndTest2 <-function(data) {
+  #data is a data structure(eg: list, dataframe) containing R and E columns
+  samples <- results <- list()
+  for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) 
+    
+    if (i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
+      print (paste("testing R and E distribution on", toString(i), "elements."))
+      sampleR<-sample(subset(data$R+.1, data$R>=0), i)
+      sampleE<-sample(subset(data$E+1, data$E>=0), i)
+      #results[paste(toString(i), "R")]<-list(list("sample"=list(sampleR), "results"=list(fitDistributions(sampleR, nSims = 200))))
+      #results[paste(toString(i), "E")]<-list(list("sample"=list(sampleE), "results"=list(fitDistributions(sampleE, nSims = 200))))
+      results[paste(toString(i), "R")]<-list(fitDistributions(sampleR, nSims = 200))
+      results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
+    }
+  return (results)
+}
+
+
 getMinSampleSize<-function(samples, pValue=.05, colName='R') {
   
   if (colName=='R')
@@ -363,8 +444,20 @@ getMinSampleSize<-function(samples, pValue=.05, colName='R') {
   return (NULL)
 }
 
+
+
 '
 {
+aidaInactive<-subset(aidat, aidat$Status %in% 
+  c("Bankruptcy","Dissolved (liquidation)", "Dissolved", "Dissolved (merger)", "Dissolved (demerger)", "Dissolved (bankruptcy)", "In liquidation"))
+
+aidaActive<-subset(aidat, aidat$Status %in% 
+  c("Active", "Active (default of payments)", "Active (receivership)"))
+
+aidaInact<-sampleAndTest(aidaInactive)
+save(aidaInact, file=paste(wdir, "files/aidaInact.RData", sep=""))
+aidaAct<-sampleAndTest(aidaActive)
+save(aidaAct, file=paste(wdir, "files/aidaAct.RData", sep=""))
 aidaS<-sampleAndTest(aidat)
 save(aidaS, file=paste(wdir, "files/aidaS.RData", sep=""))
 aida7<-sampleAndTest(subset(aidat, aidat$Year==2007))
@@ -426,7 +519,7 @@ save(tess, file=paste(wdir, "files/tess.RData", sep=""))
 }
 '
 ### EDIT varName TO INSPECT OTHER RESULTS: EG aidaS, aida7, etc. ###
-varName="aida7"
+varName="aidaInact"
 tryCatch(
   samples<-eval(parse(text=varName)),
 error = function(e) {
@@ -446,24 +539,65 @@ for (sample in samples) {
 names(pValues)<-names(aicS)<-names(bicS)<-names(samples) 
 
 ## EDIT SAMPLE VAR TO HAVE STATISTICS OF ANOTHER SAMPLE ##
-distributionColors<-list("norm"="red","llogis"="blue", "lnorm"="yellow","pareto"="black","exp"="aquamarine4","weibull"="blueviolet","gamma"="green")
-sample<-samples$`100 E`
+distributionColors<-list("My sample"="red", "norm"="brown","llogis"="blue", "lnorm"="yellow","pareto"="black","exp"="aquamarine4","weibull"="blueviolet","gamma"="green")
+sample<-samples$`10000 E`
 x<-sample$sample
 fits<-sample$fits
 hist(x, prob=T, breaks="fd", xlab="growth_random rate", col="grey", main="Empirical small growth Rate Distribution")
-#col: 1=black, 2=red, 3=green, 4=blue, 5=light blue, 6=violet, 7=yellow, 8=grey
-#curve(dnorm(x, fits$norm$estimate[1], fits$norm$estimate[2]), add=T,col = "red", lwd=2)
-curve(dllogis(x, fits$llogis$estimate[1]), add=T,col = distributionColors$llogis, lwd=2)
-curve(dlnorm(x, fits$lnorm$estimate[1], fits$lnorm$estimate[2]), add=T,col = distributionColors$lnorm, lwd=2)
-curve(dpareto(x,  fits$pareto$estimate[1] , fits$pareto$estimate[2]), add=T,col = distributionColors$pareto , lwd=2)
-curve(dexp(x, fits$exp$estimate[1]), add=T,col = distributionColors$exp, lwd=2)
-curve(dweibull(x, fits$weibull$estimate[1], fits$weibull$estimate[2]), add=T,col = distributionColors$weibull, lwd=2)
-curve(dgamma(x, fits$gamma$estimate[1], fits$gamma$estimate[2]), add=T,col = distributionColors$gamma, lwd=2)
-legend("topright", legend=c("Pareto", "Log Norm", "Weibull"),
-       col=as.character(distributionColors[c("pareto","lnorm","weibull")]), lty=1, cex=.8)
+#plot(density(x),lwd=2, col="red")
+makeCurves<-function(distribList, curveType="d",estimatedDistr=fits, mySample=NULL, colors=distributionColors) {
+  #distribList is the list of distributions you want to plot
+  #curveType is "d" if you want to plot a density function, "p" if you want to plot an ecdf(probability)
+  #estimatedDistr is a list of fitted distributions (by fitdist function)
+  
+  legends<-vector(mode = "character")
+  distribList<-rev(distribList)
+  if(!is.null(mySample)) {
+    if(curveType=="d")
+      plot(density(mySample), cex=0.5, lwd=2, col="red", xlab="Employees")
+    else if(curveType=="p")
+      plot(ecdf(mySample),lwd=2, col="red")
+    legends<-append(legends,"My sample")
+  }
+  for (i in (1:length(distribList))) {
+    currDistr<-distribList[i]
+  if(endsWith(names(distribList)[i], "mle-norm") | "norm" == names(distribList)[i]) {
+    curve(do.call(paste(curveType, "norm",sep=""), list(x, estimatedDistr$norm$estimate[1], estimatedDistr$norm$estimate[2])), add=T,col = colors[["norm"]], lwd=2)
+    legends<-append(legends,"norm")
+  }
+  else if(endsWith(names(distribList)[i], "lnorm") | "lnorm" %in% names(distribList)[i]) {
+    curve(do.call(paste(curveType, "lnorm",sep=""), list(x, estimatedDistr$lnorm$estimate[1], estimatedDistr$lnorm$estimate[2])), add=T,col = distributionColors$lnorm, lwd=2)
+    legends<-append(legends,"lnorm")
+  }
+  else if(endsWith(names(distribList)[i], "gamma") | "gamma" %in% names(distribList)[i]) {
+    curve(do.call(paste(curveType, "gamma",sep=""), list(x, estimatedDistr$gamma$estimate[1], estimatedDistr$gamma$estimate[2])), add=T,col = distributionColors$gamma, lwd=2)
+    legends<-append(legends,"gamma")
+  }
+  else if(endsWith(names(distribList)[i], "weibull") | "weibull" %in% names(distribList[i])) {
+    curve(do.call(paste(curveType, "weibull",sep=""), list(x, estimatedDistr$weibull$estimate[1], estimatedDistr$weibull$estimate[2])), add=T,col = distributionColors$weibull, lwd=2)
+    legends<-append(legends,"weibull")
+  }
+  else if(endsWith(names(distribList)[i], "exp") | "exp" %in% names(distribList)[i]) {
+    curve(do.call(paste(curveType, "exp",sep=""), list(x, estimatedDistr$exp$estimate[1])), add=T,col = distributionColors$exp, lwd=2)
+    legends<-append(legends,"exp")
+  }
+  else if(endsWith(names(distribList)[i], "llogis") | "llogis" %in% names(distribList)[i]) {
+    curve(do.call(paste(curveType, "llogis",sep=""), list(x, estimatedDistr$llogis$estimate[1])), add=T,col = distributionColors$llogis, lwd=2)
+    legends<-append(legends,"llogis")
+  }
+  else if(endsWith(names(distribList)[i], "pareto") | "pareto" %in% names(distribList)[i]) {
+    curve(do.call(paste(curveType, "pareto",sep=""), list(x,  estimatedDistr$pareto$estimate[1] , estimatedDistr$pareto$estimate[2])), add=T,col = distributionColors$pareto , lwd=2)
+    legends<-append(legends,"pareto")
+  }
+  }
+  legend("topright", legend=legends,
+         col=as.character(distributionColors[legends]), lty=1, cex=.8)
+}
+makeCurves(getSortedGof(sample)[1:3], mySample = x)
+#makeCurves(getSortedPValue(sample)[1:3])
 #BETA SAMPLE (VALUES BETWEEN 0 AND 1)
-x<-x/(max(x)+.1)
-hist(x, prob=T, breaks="fd", xlab="growth_random rate", col="grey", main="Empirical small growth Rate Distribution")
+x2<-x/(max(x)+.1)
+hist(x2, prob=T, breaks="fd", xlab="growth_random rate", col="grey", main="Empirical small growth Rate Distribution")
 curve(dbeta(x, fits$beta$estimate[1], fits$beta$estimate[2]), add=T,col = "red", lwd=2)
 
 ### QQPLOTS
@@ -472,11 +606,7 @@ qqplot(y, x, xlab="Theoretical Quantiles", ylab = "Empirical Quantiles")
 qqline(rlnorm(length(x), fits$lnorm$estimate[1], fits$lnorm$estimate[2]), col = 2,lwd=2,lty=2, distribution = qlnorm)
 
 #CDF
-plot(ecdf(sample$sample),cex=0.5, col="red")
-curve(ppareto(x,fits$pareto$estimate[1], fits$pareto$estimate[2]), add = T , cex=0.5, col="blue")
-curve(plnorm(x,fits$lnorm$estimate[1], fits$lnorm$estimate[2]), add = T ,  cex=0.5,col="yellow")
-curve(pnorm(x,fits$norm$estimate[1], fits$norm$estimate[2]), add = T , cex=0.5, col="brown")
-
+makeCurves(getSortedGof(sample)[1:3], mySample = x , curveType = "p")
 
 # For fitdistr objects:
 boot <- bootdist(fits$norm, bootmethod = "nonparam", niter = 1000, ncpus = 6) #uses parametric bootsrap to generate 

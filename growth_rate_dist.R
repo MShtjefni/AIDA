@@ -8,6 +8,23 @@ nine_year_firms2$Size[50 <= nine_year_firms2$E & nine_year_firms2$E <= 249] <- "
 nine_year_firms2$Size[nine_year_firms2$E >= 250] <- "Large"
 
 
+getGrowth <- function(data) {
+  data <- arrange(data, data$TaxID, data$Year)
+  growths <- group_by(data,TaxID, Year)
+  growths <- summarize(growths, Revenue=sum(R))
+  data$Growth <- NA
+  for (row in 2:nrow(growths)) {
+    if (growths[row, "TaxID"] != growths[row-1, "TaxID"]) next
+    if ((growths[row, "Year"] - growths[row-1, "Year"]) != 1) next
+    #random_group_by$Growth[row] <- log10(random_group_by[row, "Revenue"]) - log10(random_group_by[row-1, "Revenue"])
+    print(row)
+    gr <- log10(growths[row, "Revenue"]/growths[row-1, "Revenue"])
+    data$Growth[row] <- as.numeric(gr)
+    #by_firm$growth_medium[row] <- (log10(by_firm[row, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row, "Year"])]) - (log10(by_firm[row-1, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row-1, "Year"])])
+  }
+  
+  return (data)
+}
 
 subsectorsGrowth <- function(data) {
   data$R<-data$R + 1
