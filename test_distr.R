@@ -176,10 +176,8 @@ fitDistributions <- function(sample, distributionList=distr, nSims=F){
   if ("exp" %in% distributionList)
   {
     print ("fitting exp...")
-    fit.exp<-fitdist(sample,"exp",method = c("mle"),lower=0.1)
+    fit.exp<-fitdist(sample,"exp",method = c("mle"),lower=0.01)
     #plot(fit.exp)
-    fit.exp$estimate
-    fit.exp$aic
     
     stats <- replicate(nSims, {   
       r <- rexp(n = length(sample), rate = fit.exp$estimate[1]  )
@@ -309,7 +307,7 @@ fitDistributions <- function(sample, distributionList=distr, nSims=F){
   # LAPLACE
   if ("laplace" %in% distributionList) {
     print ("fitting laplace...")
-    fit.laplace <-fitdist(sample, "laplace",method = c("mle"))
+    fit.laplace <-fitdist(sample, "laplace",method = c("mle"), start=list(location=1, scale=0.001))
     #plot(fit.norm)
     
     stats <- replicate(nSims, {
@@ -368,6 +366,37 @@ fitDistributions <- function(sample, distributionList=distr, nSims=F){
     
   }
   
+  #LOGIS 
+  if ("logis" %in% distributionList) {
+    print ("fitting logis...")
+    fit.logis <-  fitdist(sample, distr="logis", method="mle")
+
+    #plot(fit.norm)
+    
+    stats <- replicate(nSims, {
+      r <- rcauchy(n = length(sample), fit.logis$estimate[1], fit.logis$estimate[2])
+      as.numeric(ks.test(r, "plogis", fit.logis$estimate[1], fit.logis$estimate[2])$statistic
+      )      
+    })
+    
+    ks<-ks.test(sample, "plogis", fit.logis$estimate[1], fit.logis$estimate[2])
+    ad<-ad.test(sample, "plogis", fit.logis$estimate[1], fit.logis$estimate[2])
+    
+    if(nSims) {
+      fit <- logspline(stats)
+      D<-1 - plogspline(ks$statistic, fit)
+      Ds["logis"]<-D
+    }
+    
+    #boot <- bootdist(fit.norm, bootmethod = "param", niter = 1000, ncpus=6) #uses parametric bootsrap to generate 
+    # 1000 samples and compute their parameters according to the given distribution
+    #fit.norm$CI<-boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
+    
+    fits["logis"]<-list(fit.logis)
+    kstests["logis"]<-list(ks)
+    adtests["logis"]<-list(ad)
+    
+  }
   
   if ("beta" %in% distributionList)
     gof<-list(gofstat(fits[- which(names(fits)=="beta")]))
@@ -392,20 +421,27 @@ getSortedGof<-function(resultSet, measureColumn='aic') {
   return (gof)
   
 }
-sampleAndTest <-function(data) {
+
+sampleAndTest <-function(data, ER=T, growth=T) {
   #data is a data structure(eg: list, dataframe) containing R and E columns
   samples <- results <- list()
-  for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) 
-    
-    if (i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
+  for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) {
+    if (ER & i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
       print (paste("testing R and E distribution on", toString(i), "elements."))
-      sampleR<-sample(subset(data$R+.1, data$R>=0), i)
-      sampleE<-sample(subset(data$E+1, data$E>=0), i)
+      sample<-sample_n(subset(data, R>=0, E>=0), i)
+      sampleR<-sample$R+.1
+      sampleE<-sample$E+1
       #results[paste(toString(i), "R")]<-list(list("sample"=list(sampleR), "results"=list(fitDistributions(sampleR, nSims = 200))))
       #results[paste(toString(i), "E")]<-list(list("sample"=list(sampleE), "results"=list(fitDistributions(sampleE, nSims = 200))))
       results[paste(toString(i), "R")]<-list(fitDistributions(sampleR, nSims = 200))
       results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
     }
+    
+    if(growth & i<=nrow(subset(data, !is.na(Growth)))) {
+      sampleG<-sample(subset(data$Growth, !is.na(data$Growth)), i)
+      results[paste(toString(i), "G")]<-list(fitDistributions(sampleG, nSims = 200, distributionList = c("cauchy", "laplace", "logis")))
+    }
+  }
   return (results)
 }
 
@@ -448,35 +484,35 @@ getMinSampleSize<-function(samples, pValue=.05, colName='R') {
 
 '
 {
-aidaInactive<-subset(aidat, aidat$Status %in% 
+aidaInactive<-subset(aida, aida$Status %in% 
   c("Bankruptcy","Dissolved (liquidation)", "Dissolved", "Dissolved (merger)", "Dissolved (demerger)", "Dissolved (bankruptcy)", "In liquidation"))
 
-aidaActive<-subset(aidat, aidat$Status %in% 
+aidaActive<-subset(aida, aida$Status %in% 
   c("Active", "Active (default of payments)", "Active (receivership)"))
 
 aidaInact<-sampleAndTest(aidaInactive)
 save(aidaInact, file=paste(wdir, "files/aidaInact.RData", sep=""))
 aidaAct<-sampleAndTest(aidaActive)
 save(aidaAct, file=paste(wdir, "files/aidaAct.RData", sep=""))
-aidaS<-sampleAndTest(aidat)
+aidaS<-sampleAndTest(aidas)
 save(aidaS, file=paste(wdir, "files/aidaS.RData", sep=""))
-aida7<-sampleAndTest(subset(aidat, aidat$Year==2007))
+aida7<-sampleAndTest(subset(aida, Year==2007))
 save(aida7, file=paste(wdir, "files/aida7.RData", sep=""))
-aida8<-sampleAndTest(subset(aidat, aidat$Year==2008))
+aida8<-sampleAndTest(subset(aida, Year==2008))
 save(aida8, file=paste(wdir, "files/aida8.RData", sep=""))
-aida9<-sampleAndTest(subset(aidat, aidat$Year==2009))
+aida9<-sampleAndTest(subset(aida, Year==2009))
 save(aida9, file=paste(wdir, "files/aida9.RData", sep=""))
-aida10<-sampleAndTest(subset(aidat, aidat$Year==2010))
+aida10<-sampleAndTest(subset(aida, Year==2010))
 save(aida10, file=paste(wdir, "files/aida10.RData", sep=""))
-aida11<-sampleAndTest(subset(aidat, aidat$Year==2011))
+aida11<-sampleAndTest(subset(aida, Year==2011))
 save(aida11, file=paste(wdir, "files/aida11.RData", sep=""))
-aida12<-sampleAndTest(subset(aidat, aidat$Year==2012))
+aida12<-sampleAndTest(subset(aida, Year==2012))
 save(aida12, file=paste(wdir, "files/aida12.RData", sep=""))
-aida13<-sampleAndTest(subset(aidat, aidat$Year==2013))
+aida13<-sampleAndTest(subset(aida, Year==2013))
 save(aida13, file=paste(wdir, "files/aida13.RData", sep=""))
-aida14<-sampleAndTest(subset(aidat, aidat$Year==2014))
+aida14<-sampleAndTest(subset(aida, Year==2014))
 save(aida14, file=paste(wdir, "files/aida14.RData", sep=""))
-aida15<-sampleAndTest(subset(aidat, aidat$Year==2015))
+aida15<-sampleAndTest(subset(aida, Year==2015))
 save(aida15, file=paste(wdir, "files/aida15.RData", sep=""))
 
 manS<-sampleAndTest(manufacturing)
@@ -519,7 +555,7 @@ save(tess, file=paste(wdir, "files/tess.RData", sep=""))
 }
 '
 ### EDIT varName TO INSPECT OTHER RESULTS: EG aidaS, aida7, etc. ###
-varName="aidaInact"
+varName="aidafail"
 tryCatch(
   samples<-eval(parse(text=varName)),
 error = function(e) {
@@ -539,11 +575,11 @@ for (sample in samples) {
 names(pValues)<-names(aicS)<-names(bicS)<-names(samples) 
 
 ## EDIT SAMPLE VAR TO HAVE STATISTICS OF ANOTHER SAMPLE ##
-distributionColors<-list("My sample"="red", "norm"="brown","llogis"="blue", "lnorm"="yellow","pareto"="black","exp"="aquamarine4","weibull"="blueviolet","gamma"="green")
-sample<-samples$`10000 E`
+distributionColors<-list("My sample"="red", "norm"="brown","llogis"="blue", "lnorm"="yellow","pareto"="black","exp"="aquamarine4","weibull"="blueviolet","gamma"="green", "laplace"="blue", "cauchy"="yellow", "logis"="green")
+sample<-samples$`1000 G`
 x<-sample$sample
 fits<-sample$fits
-hist(x, prob=T, breaks="fd", xlab="growth_random rate", col="grey", main="Empirical small growth Rate Distribution")
+hist(x, prob=T, breaks="fd", xlim = c(min(x)-.1*abs(min(x)), max(x)+.1*abs(max(x))), col="grey", main="Empirical small growth Rate Distribution")
 #plot(density(x),lwd=2, col="red")
 makeCurves<-function(distribList, curveType="d",estimatedDistr=fits, mySample=NULL, colors=distributionColors) {
   #distribList is the list of distributions you want to plot
@@ -561,39 +597,51 @@ makeCurves<-function(distribList, curveType="d",estimatedDistr=fits, mySample=NU
   }
   for (i in (1:length(distribList))) {
     currDistr<-distribList[i]
-  if(endsWith(names(distribList)[i], "mle-norm") | "norm" == names(distribList)[i]) {
-    curve(do.call(paste(curveType, "norm",sep=""), list(x, estimatedDistr$norm$estimate[1], estimatedDistr$norm$estimate[2])), add=T,col = colors[["norm"]], lwd=2)
-    legends<-append(legends,"norm")
-  }
-  else if(endsWith(names(distribList)[i], "lnorm") | "lnorm" %in% names(distribList)[i]) {
-    curve(do.call(paste(curveType, "lnorm",sep=""), list(x, estimatedDistr$lnorm$estimate[1], estimatedDistr$lnorm$estimate[2])), add=T,col = distributionColors$lnorm, lwd=2)
-    legends<-append(legends,"lnorm")
-  }
-  else if(endsWith(names(distribList)[i], "gamma") | "gamma" %in% names(distribList)[i]) {
-    curve(do.call(paste(curveType, "gamma",sep=""), list(x, estimatedDistr$gamma$estimate[1], estimatedDistr$gamma$estimate[2])), add=T,col = distributionColors$gamma, lwd=2)
-    legends<-append(legends,"gamma")
-  }
-  else if(endsWith(names(distribList)[i], "weibull") | "weibull" %in% names(distribList[i])) {
-    curve(do.call(paste(curveType, "weibull",sep=""), list(x, estimatedDistr$weibull$estimate[1], estimatedDistr$weibull$estimate[2])), add=T,col = distributionColors$weibull, lwd=2)
-    legends<-append(legends,"weibull")
-  }
-  else if(endsWith(names(distribList)[i], "exp") | "exp" %in% names(distribList)[i]) {
-    curve(do.call(paste(curveType, "exp",sep=""), list(x, estimatedDistr$exp$estimate[1])), add=T,col = distributionColors$exp, lwd=2)
-    legends<-append(legends,"exp")
-  }
-  else if(endsWith(names(distribList)[i], "llogis") | "llogis" %in% names(distribList)[i]) {
-    curve(do.call(paste(curveType, "llogis",sep=""), list(x, estimatedDistr$llogis$estimate[1])), add=T,col = distributionColors$llogis, lwd=2)
-    legends<-append(legends,"llogis")
-  }
-  else if(endsWith(names(distribList)[i], "pareto") | "pareto" %in% names(distribList)[i]) {
-    curve(do.call(paste(curveType, "pareto",sep=""), list(x,  estimatedDistr$pareto$estimate[1] , estimatedDistr$pareto$estimate[2])), add=T,col = distributionColors$pareto , lwd=2)
-    legends<-append(legends,"pareto")
-  }
+    if(endsWith(names(distribList)[i], "mle-norm") | "norm" == names(distribList)[i]) {
+      curve(do.call(paste(curveType, "norm",sep=""), list(x, estimatedDistr$norm$estimate[1], estimatedDistr$norm$estimate[2])), add=T,col = colors[["norm"]], lwd=2)
+      legends<-append(legends,"norm")
+    }
+    else if(endsWith(names(distribList)[i], "lnorm") | "lnorm" %in% names(distribList)[i]) {
+      curve(do.call(paste(curveType, "lnorm",sep=""), list(x, estimatedDistr$lnorm$estimate[1], estimatedDistr$lnorm$estimate[2])), add=T,col = distributionColors$lnorm, lwd=2)
+      legends<-append(legends,"lnorm")
+    }
+    else if(endsWith(names(distribList)[i], "gamma") | "gamma" %in% names(distribList)[i]) {
+      curve(do.call(paste(curveType, "gamma",sep=""), list(x, estimatedDistr$gamma$estimate[1], estimatedDistr$gamma$estimate[2])), add=T,col = distributionColors$gamma, lwd=2)
+      legends<-append(legends,"gamma")
+    }
+    else if(endsWith(names(distribList)[i], "weibull") | "weibull" %in% names(distribList[i])) {
+      curve(do.call(paste(curveType, "weibull",sep=""), list(x, estimatedDistr$weibull$estimate[1], estimatedDistr$weibull$estimate[2])), add=T,col = distributionColors$weibull, lwd=2)
+      legends<-append(legends,"weibull")
+    }
+    else if(endsWith(names(distribList)[i], "exp") | "exp" %in% names(distribList)[i]) {
+      curve(do.call(paste(curveType, "exp",sep=""), list(x, estimatedDistr$exp$estimate[1])), add=T,col = distributionColors$exp, lwd=2)
+      legends<-append(legends,"exp")
+    }
+    else if(endsWith(names(distribList)[i], "llogis") | "llogis" %in% names(distribList)[i]) {
+      curve(do.call(paste(curveType, "llogis",sep=""), list(x, estimatedDistr$llogis$estimate[1])), add=T,col = distributionColors$llogis, lwd=2)
+      legends<-append(legends,"llogis")
+    }
+    else if(endsWith(names(distribList)[i], "pareto") | "pareto" %in% names(distribList)[i]) {
+      curve(do.call(paste(curveType, "pareto",sep=""), list(x,  estimatedDistr$pareto$estimate[1] , estimatedDistr$pareto$estimate[2])), add=T,col = distributionColors$pareto , lwd=2)
+      legends<-append(legends,"pareto")
+    }
+    else if(endsWith(names(distribList)[i], "laplace") | "laplace" %in% names(distribList)[i]) {
+       curve(do.call(paste(curveType, "laplace",sep=""), list(x, estimatedDistr$laplace$estimate[1], estimatedDistr$laplace$estimate[2])), add=T,col = distributionColors$laplace, lwd=2)
+       legends<-append(legends,"laplace")
+    }
+    else if(endsWith(names(distribList)[i], "cauchy") | "cauchy" %in% names(distribList)[i]) {
+      curve(do.call(paste(curveType, "cauchy",sep=""), list(x, estimatedDistr$cauchy$estimate[1], estimatedDistr$cauchy$estimate[2])), add=T,col = distributionColors$cauchy, lwd=2)
+      legends<-append(legends,"cauchy")
+    }
+    else if(endsWith(names(distribList)[i], "mle-logis") | "logis" %in% names(distribList)[i]) {
+      curve(do.call(paste(curveType, "logis",sep=""), list(x, estimatedDistr$logis$estimate[1], estimatedDistr$logis$estimate[2])), add=T,col = distributionColors$logis, lwd=2)
+      legends<-append(legends,"logis")
+    }
   }
   legend("topright", legend=legends,
          col=as.character(distributionColors[legends]), lty=1, cex=.8)
 }
-makeCurves(getSortedGof(sample)[1:3], mySample = x)
+makeCurves(getSortedGof(sample)[1:3])
 #makeCurves(getSortedPValue(sample)[1:3])
 #BETA SAMPLE (VALUES BETWEEN 0 AND 1)
 x2<-x/(max(x)+.1)

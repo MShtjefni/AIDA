@@ -12,3 +12,7 @@ poweRlaw
 fExtremes
 corrplot
 goftest
+ggplot2
+wesanderson
+reshape2
+scales

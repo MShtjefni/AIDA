@@ -10,19 +10,22 @@ nine_year_firms2$Size[nine_year_firms2$E >= 250] <- "Large"
 
 getGrowth <- function(data) {
   data <- arrange(data, data$TaxID, data$Year)
-  growths <- group_by(data,TaxID, Year)
-  growths <- summarize(growths, Revenue=sum(R))
-  data$Growth <- NA
-  for (row in 2:nrow(growths)) {
-    if (growths[row, "TaxID"] != growths[row-1, "TaxID"]) next
-    if ((growths[row, "Year"] - growths[row-1, "Year"]) != 1) next
-    #random_group_by$Growth[row] <- log10(random_group_by[row, "Revenue"]) - log10(random_group_by[row-1, "Revenue"])
-    print(row)
-    gr <- log10(growths[row, "Revenue"]/growths[row-1, "Revenue"])
-    data$Growth[row] <- as.numeric(gr)
-    #by_firm$growth_medium[row] <- (log10(by_firm[row, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row, "Year"])]) - (log10(by_firm[row-1, "Revenue"]) - year_average$tot[year_average$Year==as.numeric(by_firm[row-1, "Year"])])
-  }
+  data$R[data$R<1]<-1
+  grouped <- group_by(data,TaxID, Year)
+  grouped <- summarize(grouped, Revenue=sum(R))
+  if (nrow(grouped)<2) 
+    return(data)
   
+  by_firm_ID <- as.numeric(grouped$TaxID)
+  by_firm_year <- as.numeric(grouped$Year)
+  by_firm_R <- as.numeric(grouped$Revenue)
+  growth <- c()
+  for (i in 2:nrow(grouped)) { # much faster computation
+    if (by_firm_ID[i] != by_firm_ID[i-1]) next
+    if (by_firm_year[i] - by_firm_year[i-1] != 1) next
+    growth[i] <- as.numeric(log(by_firm_R[i]/by_firm_R[i-1]))
+  }
+  data$Growth<-growth
   return (data)
 }
 
@@ -78,6 +81,7 @@ singleFirmGrowth <- function(data) {
     by_firm$Growth<- NA
 
     #average<-(sum(log10(by_firm$Revenue))/nrow(by_firm))
+    if (nrow(by_firm)<2) next
     for (row in 2:nrow(by_firm)) {
       if (by_firm[row, "TaxID"] != by_firm[row-1, "TaxID"]) next
       #if ((by_firm[row, "Year"] - by_firm[row-1, "Year"]) != 1) next
@@ -109,6 +113,7 @@ getGrowthDensities <- function(data, growthColumn) {
   }
   return (densities)
 }
+
 
 #library(stats4)
 #library(fitdistrplus) # maximum likelihood fitting (excluding laplace dist) 
@@ -250,4 +255,9 @@ f.os<-c()
 for (j in 1:50) {f.os[j]<- table(growth.cut)[[j]]}
 
 chisq.test(x=f.os,p=p)
+
+
+
+
+
   

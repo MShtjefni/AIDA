@@ -1,10 +1,10 @@
-aidaFailed<-subset(aidat,aidat$Status %in% c("Bankruptcy", "Dissolved", "Dissolved (bankruptcy)"))
+aidaFailed<-subset(aida,aida$Status %in% c("Bankruptcy", "Dissolved", "Dissolved (bankruptcy)"))
 
 mean(subset(aidaFailed$R, aidaFailed$R>=0)) #4849.32
-mean(subset(aidat$R, aidat$R>=0)) # 3072.71
+mean(subset(aida$R, aida$R>=0)) # 3072.71
 
 mean(subset(aidaFailed$P, !is.na(aidaFailed$P))) #--55.15 ->NEGATIVE AVG PROFIT!
-mean(subset(aidat$P, !is.na(aidat$P))) #37.53
+mean(subset(aida$P, !is.na(aida$P))) #37.53
 length(subset(aidaFailed$P,aidaFailed$P>=0)) #406225 rows have positive Profit (49% of total rows of aidaFailed)
 length(subset(aidat$P,aidat$P>=0)) #4962601 rows (59.2% that is much more than 49% of aidaFailed)
 
@@ -23,7 +23,7 @@ nrow(subset(aidaFailed,aidaFailed$Size=='Large')) #2720 -> 0.33%
 nrow(subset(aidat,aidat$Size=='Large')) #33681 -> 0.4%
 
 #ADDING GROWTH
-failedGrowth<-getGrowth(aidaFailed)
+aidaFailed<-getGrowth(aidaFailed)
 ### ANALYZING THE LAST YEAR(S) OF LIFE OF A FIRM.
 aidaFailed<-group_by(aidaFailed,TaxID)
 summarize(aidaFailed, lastYear = max(Year))
