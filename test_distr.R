@@ -422,9 +422,12 @@ getSortedGof<-function(resultSet, measureColumn='aic') {
   
 }
 
-sampleAndTest <-function(data, ER=T, growth=T) {
+sampleAndTest <-function(data, ER=T, growth=F) {
   #data is a data structure(eg: list, dataframe) containing R and E columns
   samples <- results <- list()
+  if(growth)
+    if (! "Growth" %in% colnames(data))
+      print ("Growth is not actually present in data. Calculating it.") + data<-getGrowth(data)
   for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) {
     if (ER & i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
       print (paste("testing R and E distribution on", toString(i), "elements."))
@@ -437,10 +440,12 @@ sampleAndTest <-function(data, ER=T, growth=T) {
       results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
     }
     
-    if(growth & i<=nrow(subset(data, !is.na(Growth)))) {
+    
+    if (growth & i<=nrow(subset(data, !is.na(Growth)))) {
       sampleG<-sample(subset(data$Growth, !is.na(data$Growth)), i)
       results[paste(toString(i), "G")]<-list(fitDistributions(sampleG, nSims = 200, distributionList = c("cauchy", "laplace", "logis")))
     }
+    
   }
   return (results)
 }
