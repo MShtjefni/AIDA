@@ -10,7 +10,7 @@ ls() #check varaibles
 
 aida = get(load("aidat.RData")) #dataset aida
 length(rownames(aida)) # 8.397.955 records
-
+View(aida)
 #numbers of attribute 14
 ncol(aida)
 

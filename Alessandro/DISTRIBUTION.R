@@ -22,23 +22,23 @@ set.seed(1000)
 manufacturing = get(load("manufacturing.RData"))
 nrow(manufacturing)# 1.027.140 records
 
-E =manufacturing$E
-R =manufacturing$R
+E = manufacturing$E
+R = manufacturing$R
 
 #SAMPLES 700.000 TO 120
 {
 #sample 700.000 records
-dat.1 = sample.rows(manufacturing,700000,replace = FALSE)
+#dat.1 = sample.rows(manufacturing,700000,replace = FALSE)
 E = dat.1$E
 R = dat.1$R
 
 #sample 350.000 records
-dat.2 = sample.rows(manufacturing,350000,replace = FALSE)
+#dat.2 = sample.rows(manufacturing,350000,replace = FALSE)
 E = dat.2$E
 R = dat.2$R
 
 #sample 150.000 records
-dat.3 = sample.rows(manufacturing,150000,replace = FALSE)
+#dat.3 = sample.rows(manufacturing,150000,replace = FALSE)
 E = dat.3$E
 R = dat.3$R
 
@@ -88,7 +88,7 @@ E = dat.11$E
 R = dat.11$R
 
 #sample 700 records
-dat.12 = sample.rows(manufacturing,700,replace = FALSE)
+#dat.12 = sample.rows(manufacturing,700,replace = FALSE)
 E = dat.12$E
 R = dat.12$R
 
@@ -96,6 +96,11 @@ R = dat.12$R
 #dat.13 = sample.rows(manufacturing,120,replace = FALSE)
 E = dat.13$E
 R = dat.13$R
+
+#sample 500 records
+#dat.14 = sample.rows(manufacturing,500,replace = FALSE)
+E = dat.14$E
+R = dat.14$R
 }
 
 #PLOT CULLEN AND FREY GRAPH
@@ -106,8 +111,6 @@ par(mfrow=c(1,1))
 
 # EMPLOYEE SEGUE UNA DISTRIBUZIONE LOG NORMALE
 # REVENUE SEGUE UNA DISTRIBUZIONE WEIBULL
-
-
 
 #DISTRIBUTION ANALYSIS
 #### NORMAL DISTRIBUTION ####
@@ -230,16 +233,33 @@ par(mfrow=c(1,1))
   ks.test(R,"pexp",rate=fit.exp.R$estimate[1])# test that fitted parameter are statistically significant
   gofstat(fit.exp.R)
   
+#### LOGISTICAL DISTRIBUTION #####
+  #### EMPLOYEE DISTRIBUTION (rejected)
+  fit.logis.E = fitdist(E,"logis") #fit our distribution for a log normal distribution
+  ks.test(E,"plogis",location=fit.logis.E$estimate[1],scale=fit.logis.E$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.logis.E)
+  
+  #### REVENUEE DISTRIBUTION (rejected)
+  fit.logis.R = fitdist(R,"logis")#fit our distribution for a normal distribution
+  fit.logis.R$estimate
+  ks.test(R,"plogis",location=fit.logis.R$estimate[1],scale=fit.logis.R$estimate[2])# test that fitted parameter are statistically significant
+  gofstat(fit.logis.R)
+  
+
 #### LOG-LOGISTICAL DISTRIBUTION #####
   #### EMPLOYEE DISTRIBUTION (rejected)
-  fit.llogis.E = fitdist(E,"logis") #fit our distribution for a log normal distribution
-  ks.test(E,"plogis",location=fit.llogis.E$estimate[1],scale=fit.llogis.E$estimate[2])# test that fitted parameter are statistically significant
+  fit.llogis.E = fitdist(E,"llogis") #fit our distribution for a log normal distribution
+  #plot(fit.llogis.R)
+  fit.llogis.E$estimate
+  ks.test(E,"pllogis",shape=fit.llogis.E$estimate[1],scale=fit.llogis.E$estimate[2])# test that fitted parameter are statistically significant
   gofstat(fit.llogis.E)
   
   #### REVENUEE DISTRIBUTION (rejected)
-  fit.llogis.R = fitdist(R,"logis")#fit our distribution for a normal distribution
-  ks.test(R,"plogis",location=fit.llogis.R$estimate[1],scale=fit.llogis.R$estimate[2])# test that fitted parameter are statistically significant
+  fit.llogis.R = fitdist(R,"llogis")#fit our distribution for a normal distribution
+  fit.llogis.R$estimate
+  ks.test(R,"pllogis",shape=fit.llogis.R$estimate[1],scale=fit.llogis.R$estimate[2])# test that fitted parameter are statistically significant
   gofstat(fit.llogis.R)
+  
   
 #### POWER-LAW DISTRIBUTION #####
   fit.pareto.E = fitdist(E,"pareto",lower = c(0, 0), start = list(scale = 1, shape = 1)) #fit our distribution fpareto

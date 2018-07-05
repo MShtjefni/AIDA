@@ -496,7 +496,7 @@ par(mfrow=c(1,1))
 #N.Employee 123940 alpha=2.294162
 #N.Employee 129417 alpha=2.239692
 #N.Employee 132242 aplha=2.275677
-sum(E.2013) #N.Employee 134181 aplha=2.265985
+#N.Employee 134181 aplha=2.265985
 #N.Employee 133911 aplha=2.27115
 #N.Employee 136228 aplha=2.295916
 
