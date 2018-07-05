@@ -160,7 +160,7 @@ manufacturing$R = manufacturing$R+1
 manufacturing$E = manufacturing$E+1
 
 nrow(manufacturing)
-
+View(manufacturing)
 
 #manufacturing$z.E= z <- (manufacturing$E - min(manufacturing$E)) /(max(manufacturing$E) - min(manufacturing$E))
 #manufacturing$z.R= z <- (manufacturing$R - min(manufacturing$R)) /(max(manufacturing$R) - min(manufacturing$R))
@@ -670,7 +670,7 @@ set.seed(10)
   {
  
   
-  fit.exp<-fitdist(R,"exp",method = c("mle") 
+  fit.exp<-fitdist(R,"exp",method = c("mle") )
   #plot(fit.exp)
   fit.exp$estimate
   fit.exp$aic
@@ -694,23 +694,24 @@ set.seed(10)
   #GEOMETRICA
   R = food$E[food$E>1]
   R = food$R[food$R>1]
+  R=E
   {
     
-    fit.geom<-fitdist(round(R),"geom",method = c("mle"))
+    fit.geom<-fitdist(R,"pareto",lower = c(0, 0), start = list(scale = 1, shape = 1))
     #plot(fit.exp)
     fit.geom$estimate
     fit.geom$aic
     
     n.sims <- 1000
     stats <- replicate(n.sims, {   
-      r <- rgeom(n = length(R), prob = fit.geom$estimate[1]  )
-      as.numeric(ks.test(r, "pgeom", prob = fit.geom$estimate[1])$statistic
+      r <- rpareto(n = length(R),scale=fit.geom$estimate[1],shape=fit.geom$estimate[2])
+      as.numeric(ks.test(r, "ppareto",scale=fit.geom$estimate[1],shape=fit.geom$estimate[2])$statistic
       )      
     })
     
     fit <- logspline(stats)
     
-    1- plogspline(ks.test(R,"pgeom",prob = fit.geom$estimate[1] )$statistic
+    1- plogspline(ks.test(R,"ppareto",scale=fit.geom$estimate[1],shape=fit.geom$estimate[2] )$statistic
                   , fit
     )
     
@@ -2715,7 +2716,12 @@ barplot(tb.sector,las=2,cex.names=0.6,horiz=TRUE)
     
   }
   
+  #PARETO
+  
 }
+
+
+
 ###### CORRELATION AND REGRESSION ANALYSIS ####
 manifacturing = get(load("/Users/alessandroarmillotta/Desktop/Statistica/Progetto/Progetto_aida_2/manifacturing.RData"))
 
@@ -2796,6 +2802,6 @@ density(altro$growth,na.rm = TRUE)
 ##### DOMANDE TANTARI#####
 #1-Prima di procedere all'analisi della correlazione, dobbiamo analizzare la distribuzione
 #2-Una volta analizzata ed individuato il tipo di distribuzione procediamo all'analisi della correlazione
-#3-Dopo aver analizzato  la correlazione, effettuiamo un test di ipotesi come H0- non correlate e H1 correlate
+#3-Dopo aver analizzato  la correlazione, effettuiamo un test di ipotesi come H0 - non correlate e H1 correlate
 
 }

@@ -17,7 +17,305 @@ For the distribution analysis I use the manufacturing dataset with 1.027.140 rec
 
 ------ WEIBULL DISTRIBUTION -----
 -EMPLOYEE : AIC = 5.292.051. The sample mean and sd are in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
-- REVENUE : AIC =
+- REVENUE : AIC = 12.045.654. The sample mean and sd are in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+
+------ EXPONENTIAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 5.770.324. The sample mean and sd are in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+- REVENUE : AIC = 919.104.312. It isn't the best distribution.
+
+------ LOG- LOGISTICAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 6.951.554. The sample mean and sd are in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+- REVENUE : AIC = 15.157.920. The sample mean and sd are in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+
+----- PARETO DISTRIBUTION ------
+- EMPLOYEE : AIC = 4.869.046. The sample mean and sd are in the quantile center. We can't rejected the null hypotesis but the p.value is <0.05.
+- REVENUEE : AIC = 12.717.599
+
+----- POISSON DISTRIBUTION -----
+- EMPLOYEE : AIC = 53.275.602. 
+- REVENUEE : AIC = 23.870.152.895
+
+------ CAUCHY DISTRIBUTION -----
+- EMPLOYEE : AIC = 5.725.447
+- REVENUE : AIC = 13.030.852
+
+For this sample, the best employee distribution based on AIC is Pareto instead for revenue is weibull distribution, but the p-value is ever 0.0
+Next i test another sample with 350.000 records.
+
+--- NORMAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 4.514.542
+- REVENUE : AIC = 9.013.197
+
+--- LOG NORMAL DISTRIBUTION
+- EMPLOYEE : AIC = 2.548.194
+- REVENUE : AIC = 6.060.257
+
+--- GAMMA DISTRIBUTION ----
+-EMPLOYEE : AIC = 2.738.839
+- REVENUE : AIC = 6.138.190
+
+--- BETA DISTRIBUTION ---
+- EMPLOYEE : AIC = -5.318.261
+- REVENUE  : AIC = -6.754.849
+
+--- WEIBULL DISTRIBUTION ---
+-EMPLOYEE : AIC = 2.648.202
+- REVENUE : AIC = 6.026.059
+
+------ EXPONENTIAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 2.889.080
+- REVENUE : AIC = 457.505.867
+
+------ LOG- LOGISTICAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 3.480.955
+- REVENUE : AIC = 7.574.570
+
+----- PARETO DISTRIBUTION ------
+- EMPLOYEE : AIC = 2.436.532
+- REVENUEE : AIC = 6.363.711
+
+----- POISSON DISTRIBUTION -----
+- EMPLOYEE : AIC = 26.865.394
+- REVENUEE : AIC = 11.784.365.014
+
+------ CAUCHY DISTRIBUTION -----
+- EMPLOYEE : AIC = 2.864.197
+- REVENUE : AIC = 6.517.736
+
+In this case, the best distribution for Employee based on AIC is the Pareto distribution , instead for Revenue is lognorm, but is possible to choose also Pareto. For the next test, the sample is long 150.000 record. I hope to find some significative p-value and a lower AIC
+
+--- NORMAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 1.917.765
+- REVENUE : AIC = 3.811.134
+
+--- LOG NORMAL DISTRIBUTION
+- EMPLOYEE : AIC = 1.094.816
+- REVENUE : AIC =  2.601.844
+
+--- GAMMA DISTRIBUTION ----
+-EMPLOYEE : AIC = 1.176.654
+- REVENUE : AIC = 2.634.796
+
+--- BETA DISTRIBUTION ---
+- EMPLOYEE : AIC = -2.276.497
+- REVENUE  : AIC = -2.890.979
+
+--- WEIBULL DISTRIBUTION ---
+-EMPLOYEE : AIC = 1.137.871
+- REVENUE : AIC = 2.587.742
+
+------ EXPONENTIAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 1.241.593
+- REVENUE : AIC = 195668808
+
+------ LOG- LOGISTICAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 1.495.839
+- REVENUE : AIC = 3.244.822
+
+----- PARETO DISTRIBUTION ------
+- EMPLOYEE : AIC = 1.047.782
+- REVENUEE : AIC = 2.734.234
+
+----- POISSON DISTRIBUTION -----
+- EMPLOYEE : AIC = 11.575.851
+- REVENUEE : AIC = 4862423297
+
+------ CAUCHY DISTRIBUTION -----
+- EMPLOYEE : AIC =1.229.922
+- REVENUE : AIC = 2.796.067
+
+Also in this sample, for Employee the best distribution is Pareto and for Revenue is log normal but we can choose maybe Pareto for assumpions of correlation more simplified.
+Now I test a sample with 80.000 records.
+
+--- NORMAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 1.021.583
+- REVENUE : AIC = 2.074.639
+
+--- LOG NORMAL DISTRIBUTION
+- EMPLOYEE : AIC = 581 359.9
+- REVENUE : AIC =  1.384.002
+
+--- GAMMA DISTRIBUTION ----
+-EMPLOYEE : AIC = 625 717.9
+- REVENUE : AIC = 1.404.101
+
+--- BETA DISTRIBUTION ---
+- EMPLOYEE : AIC = -1.215.983
+- REVENUE  : AIC = -1.542.848
+
+--- WEIBULL DISTRIBUTION ---
+-EMPLOYEE : AIC = 604 552.0
+- REVENUE : AIC = 1.376.579
+
+------ EXPONENTIAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 660706.3
+- REVENUE : AIC = 110.583.606
+
+------ LOG- LOGISTICAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 796 628.2
+- REVENUE : AIC = 1.742.621
+
+----- PARETO DISTRIBUTION ------
+- EMPLOYEE : AIC = 555 456.9
+- REVENUEE : AIC = 1.452.375
+
+----- POISSON DISTRIBUTION -----
+- EMPLOYEE : AIC = 6.219.965
+- REVENUEE : AIC = 3.007.301.746
+
+------ CAUCHY DISTRIBUTION -----
+- EMPLOYEE : AIC =n653 602.0
+- REVENUE : AIC = 1.488.775
+
+In this sample, the best Employee distribution is pareto and maybe for revenue. Now I test distribution with 40.000 records. 
+
+--- NORMAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 482 306.2
+- REVENUE : AIC = 1.003.208
+
+--- LOG NORMAL DISTRIBUTION
+- EMPLOYEE : AIC = 291 307.0
+- REVENUE : AIC =  693 300.6
+
+--- GAMMA DISTRIBUTION ----
+-EMPLOYEE : AIC = 312 039.7
+- REVENUE : AIC = 701 139.5
+
+--- BETA DISTRIBUTION ---
+- EMPLOYEE : AIC = -608 908.9
+- REVENUE  : AIC = -772 431.8
+
+--- WEIBULL DISTRIBUTION ---
+-EMPLOYEE : AIC = 302 544.2
+- REVENUE : AIC = 689 281.9
+
+------ EXPONENTIAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 328 080.7
+- REVENUE : AIC = 50.346.513
+
+------ LOG- LOGISTICAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 394 739.4
+- REVENUE : AIC = 861 660.8
+
+----- PARETO DISTRIBUTION ------
+- EMPLOYEE : AIC = 278 742.7
+- REVENUEE : AIC = 728 049.5
+
+----- POISSON DISTRIBUTION -----
+- EMPLOYEE : AIC = 2.784.137
+- REVENUEE : AIC = 1.204.447.090
+
+------ CAUCHY DISTRIBUTION -----
+- EMPLOYEE : AIC = 327 373.1
+- REVENUE : AIC = 745 777.9.
+
+For the third time, employee maybe is a pareto distribution and revenue maybe is pareto/weibull/lognorm.
+The 5th sample is composed with 20.000 records.
+
+--- NORMAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 247069.9
+- REVENUE : AIC = 492490.5
+
+--- LOG NORMAL DISTRIBUTION
+- EMPLOYEE : AIC = 145891.3
+- REVENUE : AIC =  346 807.2
+
+--- GAMMA DISTRIBUTION ----
+-EMPLOYEE : AIC = 156296.9
+- REVENUE : AIC = 350 769.7
+
+--- BETA DISTRIBUTION ---
+- EMPLOYEE : AIC = -304161.6
+- REVENUE  : AIC = -386033.0
+
+--- WEIBULL DISTRIBUTION ---
+-EMPLOYEE : AIC = 151478.1
+- REVENUE : AIC = 3448 51.1
+
+------ EXPONENTIAL DISTRIBUTION -----
+- EMPLOYEE : AIC =  164600.5
+- REVENUE : AIC = 25593307
+
+------ LOG- LOGISTICAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 198 102.8
+- REVENUE : AIC = 431 617.1
+
+----- PARETO DISTRIBUTION ------
+- EMPLOYEE : AIC = 139 344.3
+- REVENUEE : AIC =  364 045.6
+
+----- POISSON DISTRIBUTION -----
+- EMPLOYEE : AIC =1435002
+- REVENUEE : AIC = 603634315
+
+------ CAUCHY DISTRIBUTION -----
+- EMPLOYEE : AIC = 164 211.3
+- REVENUE : AIC = 373 143.2
+
+here the distr is pareto-pareto. Let's try with 10000 records.
+
+--- NORMAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 116211.4
+- REVENUE : AIC = 233719.7
+
+--- LOG NORMAL DISTRIBUTION
+- EMPLOYEE : AIC = 72722.69
+- REVENUE : AIC = 173228.9
+
+--- GAMMA DISTRIBUTION ----
+-EMPLOYEE : AIC = 77535.94
+- REVENUE : AIC = 174537.0
+
+--- BETA DISTRIBUTION ---
+- EMPLOYEE : AIC = 152708.4
+- REVENUE  : AIC = 193872.6
+
+--- WEIBULL DISTRIBUTION ---
+-EMPLOYEE : AIC = 75400.49
+- REVENUE : AIC = 172140.0
+
+------ EXPONENTIAL DISTRIBUTION -----
+- EMPLOYEE : AIC =  81135.07
+- REVENUE : AIC =  10982797
+
+------ LOG- LOGISTICAL DISTRIBUTION -----
+- EMPLOYEE : AIC = 97379.72
+- REVENUE : AIC = 212060.0
+
+----- PARETO DISTRIBUTION ------
+- EMPLOYEE : AIC =  69634.56
+- REVENUEE : AIC =  182077.5
+
+----- POISSON DISTRIBUTION -----
+- EMPLOYEE : AIC = 623519.0
+- REVENUEE : AIC = 218604960
+
+------ CAUCHY DISTRIBUTION -----
+- EMPLOYEE : AIC = 81826.00
+- REVENUE : AIC = 186102.7
+
+Let's try with 5000 records.
+Results are the same for the previous sample.
+
+let's try with 2500 records. Results are the same for the previous sample.
+
+Let's try with 1500 records. It's the same. No valid p.value
+
+Let's try with 1000 records. It's the same. No valid p.value
+
+Let's try with 800 records. It's the same. No valid p.value.
+
+Let's try with 700 records. It's the same. No valid p.value.
+
+Let's try with 600 records. 
+
+
+
+
+
+
+
+
 
 
 
