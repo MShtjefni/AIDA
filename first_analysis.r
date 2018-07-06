@@ -89,9 +89,9 @@ addSize <- function(data) {
 "Subset of the only manufacturing firms. Adding subsector column"
 addSubsectorColumn <- function(data) {
   subsectors<-list(subsector=c('alimentari','bevande','tabacco','tessile','confezAbbigl','pelle','legno','carta','stampa', 'fabbrCoke','prodChimici','prodFarm','gomma','minerali','metallurgia','prodMetallo','computer','appElettriche','macchinari','autoveicoli', 'mezziTrasp', 'mobili', 'altreManuf', 'riparaz'), min=c(100000,110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000), max=c(110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000,340000))
-  data$SubSector=factor(levels = subsectors$subsector)
+  data$SubSector=factor(x = replicate(n = nrow(data), NA),levels = subsectors$subsector)
   for(i in seq(length(subsectors$subsector))) #mapping subsector to each row based on Ateco
-  data$SubSector[data$Ateco>=subsectors$min[i] & data$Ateco<subsectors$max[i]] <- subsectors$subsector[i]
+    data$SubSector[data$Ateco>=subsectors$min[i] & data$Ateco<subsectors$max[i]] <- subsectors$subsector[i]
   return (data) 
   }
 

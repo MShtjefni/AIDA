@@ -16,3 +16,4 @@ ggplot2
 wesanderson
 reshape2
 scales
+boot
