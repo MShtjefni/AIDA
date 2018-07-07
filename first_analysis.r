@@ -89,22 +89,22 @@ addSize <- function(data) {
 "Subset of the only manufacturing firms. Adding subsector column"
 addSubsectorColumn <- function(data) {
   subsectors<-list(subsector=c('alimentari','bevande','tabacco','tessile','confezAbbigl','pelle','legno','carta','stampa', 'fabbrCoke','prodChimici','prodFarm','gomma','minerali','metallurgia','prodMetallo','computer','appElettriche','macchinari','autoveicoli', 'mezziTrasp', 'mobili', 'altreManuf', 'riparaz'), min=c(100000,110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000), max=c(110000,120000,130000,140000,150000,160000,170000,180000,190000,200000,210000,220000,230000,240000,250000,260000,270000,280000,290000,300000,310000,320000,330000,340000))
-  data$SubSector=factor(levels = subsectors$subsector)
+  data$SubSector=factor(x = replicate(n = nrow(data), NA),levels = subsectors$subsector)
   for(i in seq(length(subsectors$subsector))) #mapping subsector to each row based on Ateco
-  data$SubSector[data$Ateco>=subsectors$min[i] & data$Ateco<subsectors$max[i]] <- subsectors$subsector[i]
+    data$SubSector[data$Ateco>=subsectors$min[i] & data$Ateco<subsectors$max[i]] <- subsectors$subsector[i]
   return (data) 
   }
 
   
-  aidat<-applyInflation(aidat)
-  aidat<-addGeoArea(aidat)
-  aidat<-addSize(aidat)
-  aida<-subset(aidat, Year>2006 & Year<2016 & R>=0 & E>=0)
-  manufacturing <- subset(aidat,Ateco>=101100 & Ateco<=332009 & Year>2006 & Year<2016) #subset containing all the manufacturing firms from original dataset
-  manufacturing <- addSubsectorColumn(manufacturing)
-  manufacturing <- dplyr::filter(manufacturing,R>=0 | is.na(R)) #removing all the entries with negative(<0) revenue
-  manufacturingNoMiss <- dplyr::filter(manufacturing, !is.na(R) & !is.na(E))  # removing all the rows having missing values for Revenue or Employee
-  #manufacturing <- arrange(manufacturing,TaxID,Year) #sort manufacturing firms by TaxID and by year
+aidat<-applyInflation(aidat)
+aidat<-addGeoArea(aidat)
+aidat<-addSize(aidat)
+aida<-subset(aidat, Year>2006 & Year<2016 & R>=0 & E>=0)
+manufacturing <- subset(aidat,Ateco>=101100 & Ateco<=332009 & Year>2006 & Year<2016) #subset containing all the manufacturing firms from original dataset
+manufacturing <- addSubsectorColumn(manufacturing)
+manufacturing <- dplyr::filter(manufacturing,R>=0 | is.na(R)) #removing all the entries with negative(<0) revenue
+manufacturingNoMiss <- dplyr::filter(manufacturing, !is.na(R) & !is.na(E))  # removing all the rows having missing values for Revenue or Employee
+#manufacturing <- arrange(manufacturing,TaxID,Year) #sort manufacturing firms by TaxID and by year
 
 
 "Basic Statistics and plots"  
@@ -139,7 +139,8 @@ ggplot(aidat, aes(x=GeoArea, fill=GeoArea)) +
                 label = paste0(round(prop.table(..count..) * 100, 1), '%')), 
             stat = 'count', position = position_dodge(.9), size = 3) + 
   scale_x_discrete(limits=c("Sud", "Nord", "Centro")) +
-  scale_fill_manual(values=wes_palette(n=3, name="Darjeeling1")) + guides(fill=F)
+  scale_fill_manual(values=wes_palette(n=3, name="Darjeeling1")) + 
+  guides(fill=F) + theme(plot.title = element_text(hjust = .5))
 by.geo = split(aidat,aidat$GeoArea)
 plot.by.geo = function(x){
   par(mfrow=c(1,1))
@@ -177,9 +178,24 @@ ggplot(aidat, aes(x=Size, fill=Size)) +
   geom_text(aes(y = prop.table((..count..)/sum(..count..)) / 2, 
                 label = paste0(round(prop.table(..count..) * 100, 1), '%')), 
             stat = 'count', position = position_dodge(.9), size = 3) + 
-  scale_fill_manual(values=wes_palette(n=3, name="Darjeeling1")) + guides(fill=F)
+  scale_fill_manual(values=wes_palette(n=3, name="Darjeeling1")) + 
+  guides(fill=F) + theme(plot.title = element_text(hjust = .5))
   
-### SIZE BY GEOAREA ###
+#plot with exp scale (exp=0.4, very similar to sqrt!)
+ggplot(aidat, aes(x=Size, fill=Size)) + 
+  geom_bar(aes(y=((prop.table((..count..)/sum(..count..)))*1000)^.4), position = "dodge") + 
+  ggtitle("Firms distribution by Size") + 
+  xlab("Firm Sizes") + ylab ("Firms percentage") + 
+  geom_text(aes(y = (prop.table((..count..)/sum(..count..)) *1000)^.4 / 2, 
+                label = paste0(round(prop.table(..count..) * 100, 1), '%')), 
+            stat = 'count', position = position_dodge(.9), size = 3) + 
+  scale_fill_manual(values=wes_palette(n=3, name="Darjeeling1")) + 
+  scale_y_continuous(labels = trans_format(function(y) y^2.5/1000, format = percent)) + 
+  guides(fill=F) + theme(plot.title = element_text(hjust = .5))
+
+
+### SIZE BY GEOAREA ### 
+{
 countBySud<-table(aidat$Size[aidat$GeoArea=='Sud'])
 countByCentro<-table(aidat$Size[aidat$GeoArea=='Centro'])
 countByNord<-table(aidat$Size[aidat$GeoArea=='Nord'])
@@ -191,9 +207,11 @@ melted$value <- as.double(melted$value)
 # ok, the percentages distribution of Small, Medium and Large are very similar within each GeoArea
 ggplot(melted, aes(GeoArea, value)) +   
   geom_bar(aes(fill = variable), position = "dodge", stat="identity")
+}
 
 
 ### GEOAREA BY SIZE ###
+{
 countBySmall<-table(aidat$GeoArea[aidat$Size=='Small'])
 countByMedium<-table(aidat$GeoArea[aidat$Size=='Medium'])
 countByLarge<-table(aidat$GeoArea[aidat$Size=='Large'])
@@ -208,7 +226,9 @@ ggplot(melted, aes(Size, value)) +
   ggtitle("Geographic Area distribution by Size") + 
   xlab("Firm Sizes") + ylab ("Firms Percentage") + 
   geom_text(aes(fill=variable, label = paste0(round(100*value, 1),"%"), y=value/2),size = 3 , position = position_dodge(.9)) + 
-  scale_fill_manual(values=wes_palette(n=3, name="Darjeeling1"))
+  scale_fill_manual(values=wes_palette(n=3, name="Darjeeling1")) +
+  theme(plot.title = element_text(hjust = .5))
+}
 
 
 "Useful subsets regarding firms which have missing values for Employee column"

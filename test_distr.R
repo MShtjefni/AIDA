@@ -422,9 +422,12 @@ getSortedGof<-function(resultSet, measureColumn='aic') {
   
 }
 
-sampleAndTest <-function(data, ER=T, growth=T) {
+sampleAndTest <-function(data, ER=T, growth=F) {
   #data is a data structure(eg: list, dataframe) containing R and E columns
   samples <- results <- list()
+  if(growth)
+    if (! "Growth" %in% colnames(data))
+      print ("Growth is not actually present in data. Calculating it.") + data<-getGrowth(data)
   for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) {
     if (ER & i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
       print (paste("testing R and E distribution on", toString(i), "elements."))
@@ -437,10 +440,12 @@ sampleAndTest <-function(data, ER=T, growth=T) {
       results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
     }
     
-    if(growth & i<=nrow(subset(data, !is.na(Growth)))) {
+    
+    if (growth & i<=nrow(subset(data, !is.na(Growth)))) {
       sampleG<-sample(subset(data$Growth, !is.na(data$Growth)), i)
       results[paste(toString(i), "G")]<-list(fitDistributions(sampleG, nSims = 200, distributionList = c("cauchy", "laplace", "logis")))
     }
+    
   }
   return (results)
 }
@@ -660,3 +665,39 @@ makeCurves(getSortedGof(sample)[1:3], mySample = x , curveType = "p")
 boot <- bootdist(fits$norm, bootmethod = "nonparam", niter = 1000, ncpus = 6) #uses parametric bootsrap to generate 
 # 1000 samples and compute their parameters according to the given distribution
 boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
+
+
+
+
+
+#CONFIDENCE INTERVALS FOR PARETO PARAMETERS 
+myStat <- function(mySample, column) {
+  print("boot...")
+  fitdist(mySample[column], "pareto", lower = c(0, 0), 
+          start = list(scale = min(mySample[column]), shape = 1))$estimate}
+samples<-boots<-list()
+for (i in 
+     c(100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000)) {
+  samples[toString(i)]<-list(sample_n(aida, i))
+  samples[[toString(i)]]['E']<-c(samples[[toString(i)]]['E']+1)
+  print(paste("Bootstrapping over sample size of: ", i, sep=""))
+  boots[toString(i)]<-list(boot(samples[[toString(i)]]$E,statistic = myStat, R = 1000))
+}
+
+plotConfidInterv<-function(data, conf=.05) {
+  "plot(density(data))
+  abline(v=quantile(data, conf/2), col='red')
+  abline(v=quantile(data, 1-(conf/2)), col='red')"
+  # subset region and plot
+  plt<-ggplot(as.data.frame(data), aes(x=data)) + geom_density(colour = "black") + geom_vline(xintercept=quantile(data, .025), color='red') + geom_vline(xintercept=quantile(data, .975), color='red')
+  d <- ggplot_build(plt)$data[[1]]
+  plt + 
+    geom_area(data = subset(d, x > quantile(data,.025) & x < quantile(data,.975)), aes(x=x, y=y), fill="blue")
+}
+
+plotConfidInterv(boots$`50000`$t[,2])
+
+# For fitdistr objects:
+aidaSample <- sample_n(aida, 10000)
+fitpar2<-fitdist(aidaSample$E+1,"pareto", method=c("mle"), lower = c(0, 0), start = list(scale = min(aidaSample$E+1), shape = 1))
+boot2 <- bootdist(fitpar2, bootmethod = "param", niter = 1000) #uses parametric bootsrap to generate
