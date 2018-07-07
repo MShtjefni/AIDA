@@ -27,7 +27,6 @@ bs = bootstrap(m_pl, no_of_sims=100, threads=4)
 plot(bs, trim=0.1)
 bs$p
 
-
 #per vedere se un certo insieme di dataset ha powerlaw, possiamo usare
 bs_p = bootstrap_p(m_pl, no_of_sims=100, threads=4)
 bs_p$p
@@ -84,7 +83,7 @@ R.2007 = manufacturing$R[manufacturing$Year==2007]
 #Employee 2007 p.value=0.6 aplha=2.205376 xmin= 78
 tb.E.2007 = table(E.2007)
 plot(names(tb.E.2007),tb.E.2007,log="xy",xlab="Employee",ylab="Freq")
-m_bl_E.2007 = conpl$new(E.2007)#create ppwerlaw object
+m_bl_E.2007 = displ$new(E.2007)#create ppwerlaw object
 plot(m_bl_E.2007)
 est = estimate_xmin(m_bl_E.2007)#estimate the xmin for the alpha calculation
 m_bl_E.2007$setXmin(est)#add xmin to power law object
