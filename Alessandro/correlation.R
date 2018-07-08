@@ -26,7 +26,7 @@ aida = get(load("aida2.RData")) #dataset aida
 #controllo i records per vedere se è il dataset giusto
 nrow(aida) #7.050.620
 
-#x.aida = sample.rows(aida,35000,replace = FALSE) #sample di aida
+x.aida = sample.rows(aida,35000,replace = FALSE) #sample di aida
 x.aida$R =round(x.aida$R)
 x.aida = x.aida[c("E","R")]
 
@@ -53,8 +53,8 @@ qqplot(y,b, xlab="Theoretical Quantiles", ylab = "Empirical Quantiles")
 
 Employee = x.aida$E[1:5000]
 Revenue = x.aida$R[1:5000]
-shapiro.test(Employee)
-shapiro.test(Revenue)
+ad.test(x.aida$E)
+ad.test(x.aida$R)
 
 #MATRICE DI CORRELAZIONE TRA E ED R DI TUTTO IL DATASET AIDA
 #Sia con Pearson che con Spearman, le correlazioni sono alte,
@@ -153,9 +153,21 @@ par(mfrow= c(1,1))
 
 ##### LINEAR REGRESSION #####
 # Y=Intercept +(β ∗ X)
-linearMod.aida <- lm(R ~ E, data=x.aida)
-par(mfrow=c(2,2))
+linearMod.aida <- lm(E ~ R, data=x.aida)
+
 print(linearMod.aida) #intercept e beta/slope
+
+# PLOT DI E ED R C'E' UNA CORRELAZIONE LINEARE
+ggplot(data = x.aida, aes(x = E, y = R)) + 
+  geom_point(color='blue') +
+  geom_smooth(method = "lm", se = FALSE,color="red")+
+  labs(x = "Employee")+
+  labs(y = "Revenue")+
+  ylim(0,500000)+
+  xlim(0,2200)+
+labs(title = paste("Y =",signif(linearMod.aida$coef[[1]],5),"+",signif(linearMod.aida$coef[[2]], 5),"X"))
+labs(title = "Plot Employee - Revenue", subtitle = "A subtitle")
+
 summary(linearMod.aida)
 
 #Dopo aver stimato il modello di regressione è necessario verificare che siano valide le ipotesi di 
@@ -163,6 +175,7 @@ summary(linearMod.aida)
 
 {
 library(gvlma)
+library(nortest)
 gvlma(linearMod.aida)
 
 #1-la media degli errori non sia significativamente diversa da zero attuando il test t di Student:
@@ -172,15 +185,22 @@ mean(residui) #molto vicino a zero
 
 #2-la normalità della distribuzione degli errori con il test di Shapiro-Wilk
 #non potendo applicare il test per via di troppi records, possiamo utilizzare il qqplot
-qqnorm(scale(residui))
+ad.test(residui)
+qqnorm(scale(residui[1:5000]))
 abline(0,1)
 
 #3-Proseguiamo con il verificare l’omoschedasticità dei residui utilizzando il test di Breusch-Pagan e
 #l’assenza di correlazione seriale tramite il test di Durbin-Watson. 
 #Entrambi i test sono largamente impiegati nelle analisi econometriche.
+library(lmtest)
 modello<-formula(linearMod.aida)
-bptest(modello,data=x.aida)
+bptest(modello,data=x.aida) #omoschedasticità
 dwtest(modello,data=x.aida) #autocorrelazione
+
+
+#confidence interval
+CI.lm =confint(linearMod.aida)
+CI.lm
 }
 
 #Before using a regression model, you have to ensure that it is statistically significant.
@@ -202,6 +222,7 @@ test.aida = x.aida[-d,]
 
 #STEP 2: Fit the model on training data and predict  on test data
 # Build the model on training data
+
 lmMod.aida <- lm(R ~ E, data=train.aida)  # build the model
 distPred.aida <- predict(lmMod.aida, test.aida)  # predict distance
 
@@ -237,6 +258,11 @@ ggplot(data = x.man, aes(x = E, y = R)) +
   ylim(0,500000)+
   xlim(0,2200)
 #labs(title = "Plot Employee - Revenue", subtitle = "A subtitle")
+
+Employee = x.man$E[1:5000]
+Revenue = x.man$R[1:5000]
+shapiro.test(Employee)
+shapiro.test(Revenue)
 
 #MATRICE DI CORRELAZIONE TRA E ED R DI TUTTO IL DATASET manufacturing
 #Sia con Pearson che con Spearman, le correlazioni sono alte,
@@ -330,46 +356,6 @@ for(i in a){
 
 
 
-##### LINEAR REGRESSION ####
-# Y=Intercept +(β ∗ X)
-linearMod.man <- lm(R ~ E, data=x.man)
-print(linearMod.man) #intercept e beta/slope
-summary(linearMod.man)
-
-#Before using a regression model, you have to ensure that it is statistically significant.
-#When there is a p-value, there is a hull and alternative hypothesis associated with it. 
-#In Linear Regression, the Null Hypothesis is that the coefficients associated with the variables 
-#is equal to zero. The alternate hypothesis is that the coefficients are not equal to zero 
-#(i.e. there exists a relationship between the independent variable in question and the dependent 
-#variable)
-
-#da quello che ho capito il nostro modello dovrebbe essere valido. I p-value sono minori di alphs
-#Per testarlo possiamo usare o la Cross Validation oppure usare training e test set
-# setting seed to reproduce results of random sampling
-
-#STEP 1: TRAINING E TEST SET
-#d1 = sort(sample(nrow(x.man), nrow(x.man)*.8)) # select training sample, sort is optional 
-train.man = x.man[d1,] 
-test.man = x.man[-d1,] 
-
-
-#STEP 2: Fit the model on training data and predict  on test data
-# Build the model on training data
-lmMod.man <- lm(R ~ E, data=train.man)  # build the model
-distPred.man <- predict(lmMod.man, test.man)  # predict distance
-
-#STEP 3: Review diagnostic measures.
-#CHECK THE PVALUES
-summary (lmMod.man)  # model summary
-
-#STEP 4: Calculate prediction accuracy and error rates
-actuals_preds.man <- data.frame(cbind(actuals=test.man$R, predicteds=distPred.man))  # make actuals_predicteds dataframe.
-correlation_accuracy.man <- cor(actuals_preds.man)  # 0.8799425
-correlation_accuracy.man
-
-
-
-
 
 
 #### MEDIA #####
@@ -424,6 +410,7 @@ corr.s.test.media = cor.test( ~ x.media$E + x.media$R,method = "spearman")
 corr.s.test.media #rifiutiamo H0 ed accettiamo H1 quindi c'è correlazione
 corr.p.test.aida = cor.test( ~ x.media$E + x.media$R,method = "pearson")
 corr.p.test.aida #rifiutiamo H0 ed accettiamo H1 quindi c'è correlazione
+
 
 
 
@@ -490,15 +477,18 @@ corr.p.test.res #rifiutiamo H0 ed accettiamo H1 quindi c'è correlazione
 
 
 
+
+
 ##### SUMMARY CORR BY SECTOR #####
 par(mfrow=c(3,2))
 #MANUFACTURING
+layout(matrix(c(2,3,1,1), 2, 2, byrow = TRUE))
 corrplot(corr.p.man,method = "number", type="upper", order="hclust")
 title(main="Pearson",sub="Manufacturing",line = -2)
 corrplot(corr.s.man,method = "number", type="upper", order="hclust")
 title(main="Spearman",sub="Manufacturing",line= -2)
 #RESTAURANT
-corrplot(corr.p.res,method = "number", type="upper", order="hclust")
+corrplot(corr.p.res,method = "number", type="upper", order="hclust",)
 title(main="Pearson",sub="Restaurant",line = -2)
 corrplot(corr.s.res,method = "number", type="upper", order="hclust")
 title(main="Spearman",sub="Restaurant",line= -2)
@@ -560,4 +550,21 @@ q = quantile(cor.res.man$t,c(0.025,0.975))
 q
 plotConfidInterv(cor.res.man$t,cor.res.man$t0)
 mean(cor.res.man$t0)
+
+
+#RESTAURANT
+#cor.boot.res <- function(data, k) cor(data[k,],method = "spearman")[1,2]
+#cor.res.res <- boot(data=with(x.res, cbind(E, R)),statistic=cor.boot.res, R=10000)
+cor.res.res$t0
+q = quantile(cor.res.res$t,c(0.025,0.975))
+q
+plotConfidInterv(cor.res.res$t,cor.res.res$t0)
+
+#MEDIA
+#cor.boot.media <- function(data, k) cor(data[k,],method = "spearman")[1,2]
+cor.res.media <- boot(data=with(x.media, cbind(E, R)),statistic=cor.boot.media, R=10000)
+cor.res.media$t0
+q = quantile(cor.res.media$t,c(0.025,0.975))
+q
+plotConfidInterv(cor.res.media$t,cor.res.media$t0)
 
