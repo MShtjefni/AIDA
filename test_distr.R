@@ -1,4 +1,4 @@
-distr <- c("norm", "lnorm", "gamma", "beta", "exp", "llogis", "weibull", "pareto")
+distr <- c("norm", "lnorm", "gamma", "beta", "weibull","exp","logis",  "pareto","cauchy" ,"llogis")
 
 fitDistributions <- function(sample, distributionList=distr, nSims=F){
   if(! length(distributionList))
