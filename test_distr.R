@@ -1,6 +1,6 @@
 distr <- c("norm", "lnorm", "gamma", "beta", "weibull","exp","logis",  "pareto","cauchy" ,"llogis")
 
-fitDistributions <- function(sample, distributionList=distr, nSims=F){
+fitDistributions <- function(sample, distributionList=distr, nSims=0){
   if(! length(distributionList))
     return (NULL)
   fits <- kstests <- adtests <- Ds <- list()
@@ -429,42 +429,24 @@ sampleAndTest <-function(data, ER=T, growth=F) {
     if (! "Growth" %in% colnames(data))
       print ("Growth is not actually present in data. Calculating it.") + data<-getGrowth(data)
   for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) {
-    if (ER & i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
+    if (ER && i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
       print (paste("testing R and E distribution on", toString(i), "elements."))
       sample<-sample_n(subset(data, R>=0, E>=0), i)
       sampleR<-sample$R+.1
       sampleE<-sample$E+1
       #results[paste(toString(i), "R")]<-list(list("sample"=list(sampleR), "results"=list(fitDistributions(sampleR, nSims = 200))))
       #results[paste(toString(i), "E")]<-list(list("sample"=list(sampleE), "results"=list(fitDistributions(sampleE, nSims = 200))))
-      results[paste(toString(i), "R")]<-list(fitDistributions(sampleR, nSims = 200))
-      results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
+      results[paste(toString(i), "R")]<-list(fitDistributions(sampleR))
+      results[paste(toString(i), "E")]<-list(fitDistributions(sampleE))
     }
     
     
-    if (growth & i<=nrow(subset(data, !is.na(Growth)))) {
+    if (growth && i<=nrow(subset(data, !is.na(Growth)))) {
       sampleG<-sample(subset(data$Growth, !is.na(data$Growth)), i)
       results[paste(toString(i), "G")]<-list(fitDistributions(sampleG, nSims = 200, distributionList = c("cauchy", "laplace", "logis")))
     }
     
   }
-  return (results)
-}
-
-
-sampleAndTest2 <-function(data) {
-  #data is a data structure(eg: list, dataframe) containing R and E columns
-  samples <- results <- list()
-  for(i in c(100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, 20000, 40000, 80000, 150000, 350000, 700000) ) 
-    
-    if (i<=min(nrow(subset(data, data$R>=0)), nrow(subset(data, data$E>=0)))) {
-      print (paste("testing R and E distribution on", toString(i), "elements."))
-      sampleR<-sample(subset(data$R+.1, data$R>=0), i)
-      sampleE<-sample(subset(data$E+1, data$E>=0), i)
-      #results[paste(toString(i), "R")]<-list(list("sample"=list(sampleR), "results"=list(fitDistributions(sampleR, nSims = 200))))
-      #results[paste(toString(i), "E")]<-list(list("sample"=list(sampleE), "results"=list(fitDistributions(sampleE, nSims = 200))))
-      results[paste(toString(i), "R")]<-list(fitDistributions(sampleR, nSims = 200))
-      results[paste(toString(i), "E")]<-list(fitDistributions(sampleE, nSims = 200))
-    }
   return (results)
 }
 
@@ -499,7 +481,7 @@ aidaInact<-sampleAndTest(aidaInactive)
 save(aidaInact, file=paste(wdir, "files/aidaInact.RData", sep=""))
 aidaAct<-sampleAndTest(aidaActive)
 save(aidaAct, file=paste(wdir, "files/aidaAct.RData", sep=""))
-aidaS<-sampleAndTest(aidas)
+aidaS<-sampleAndTest(aida)
 save(aidaS, file=paste(wdir, "files/aidaS.RData", sep=""))
 aida7<-sampleAndTest(subset(aida, Year==2007))
 save(aida7, file=paste(wdir, "files/aida7.RData", sep=""))
@@ -558,9 +540,26 @@ save(pelle, file=paste(wdir, "files/pelle.RData", sep=""))
 tess <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="tessile"))
 save(tess, file=paste(wdir, "files/tess.RData", sep=""))
 }
+
+mediaS<-sampleAndTest(media,growth = F)
+save(mediaS, file=paste(wdir, "files/mediaS.RData", sep=""))
+restaurS<-sampleAndTest(restaurants)
+save(restaurS, file=paste(wdir, "files/restaurS.RData", sep=""))
+aidaSmall<-sampleAndTest(subset(aida, Size=="Small"))
+save(aidaSmall, file=paste(wdir, "files/aidaSmall.RData", sep=""))
+aidaMedium<-sampleAndTest(subset(aida, Size=="Medium"))
+save(aidaMedium, file=paste(wdir, "files/aidaMedium.RData", sep=""))
+aidaLarge<-sampleAndTest(subset(aida, Size=="Large"))
+save(aidaLarge, file=paste(wdir, "files/aidaLarge.RData", sep=""))
 '
+### P VALUES
+### AIDA SMALL: R is gamma(then weibull and lnorm, same as "usually" happens). 
+### E is weibull! (then gamma)
+### AIDA MEDIUM: R is weibull(then gamma, and lnorm), E is PARETO!
+### AIDA LARGE: R is lnorm(then weibull)
+
 ### EDIT varName TO INSPECT OTHER RESULTS: EG aidaS, aida7, etc. ###
-varName="aidafail"
+varName="aidaS"
 tryCatch(
   samples<-eval(parse(text=varName)),
 error = function(e) {
@@ -580,11 +579,12 @@ for (sample in samples) {
 names(pValues)<-names(aicS)<-names(bicS)<-names(samples) 
 
 ## EDIT SAMPLE VAR TO HAVE STATISTICS OF ANOTHER SAMPLE ##
-distributionColors<-list("My sample"="red", "norm"="brown","llogis"="blue", "lnorm"="yellow","pareto"="black","exp"="aquamarine4","weibull"="blueviolet","gamma"="green", "laplace"="blue", "cauchy"="yellow", "logis"="green")
-sample<-samples$`1000 G`
+distributionColors<-list("My sample"="red", "norm"="brown","llogis"="blue", "lnorm"="yellow","pareto"="aquamarine4","exp"="black","weibull"="blueviolet","gamma"="green", "laplace"="blue", "cauchy"="yellow", "logis"="green")
+sample<-samples$`1000 R`
+xlab = 'Revenue'
 x<-sample$sample
 fits<-sample$fits
-hist(x, prob=T, breaks="fd", xlim = c(min(x)-.1*abs(min(x)), max(x)+.1*abs(max(x))), col="grey", main="Empirical small growth Rate Distribution")
+hist(x, prob=T, breaks="fd", xlim = c(min(x)-.1*abs(min(x)), max(x)+.1*abs(max(x))), col="red", main="Empirical small growth Rate Distribution")
 #plot(density(x),lwd=2, col="red")
 makeCurves<-function(distribList, curveType="d",estimatedDistr=fits, mySample=NULL, colors=distributionColors) {
   #distribList is the list of distributions you want to plot
@@ -595,9 +595,9 @@ makeCurves<-function(distribList, curveType="d",estimatedDistr=fits, mySample=NU
   distribList<-rev(distribList)
   if(!is.null(mySample)) {
     if(curveType=="d")
-      plot(density(mySample), cex=0.5, lwd=2, col="red", xlab="Employees")
+      plot(density(mySample), cex=0.5, lwd=2, col="red", xlab=xlab, main = paste(xlab, "Fits"), xlim = c(min(mySample), max(mySample)-(abs(max(mySample))/3)))
     else if(curveType=="p")
-      plot(ecdf(mySample),lwd=2, col="red")
+      plot(ecdf(mySample),lwd=2, col="red", xlab=xlab, main = paste(xlab, "Fits"))
     legends<-append(legends,"My sample")
   }
   for (i in (1:length(distribList))) {
@@ -646,7 +646,8 @@ makeCurves<-function(distribList, curveType="d",estimatedDistr=fits, mySample=NU
   legend("topright", legend=legends,
          col=as.character(distributionColors[legends]), lty=1, cex=.8)
 }
-makeCurves(getSortedGof(sample)[1:3])
+makeCurves(getSortedGof(sample)[1:3], mySample = x)
+makeCurves(getSortedGof(sample)[1:3], mySample = subset(x,x>500))
 #makeCurves(getSortedPValue(sample)[1:3])
 #BETA SAMPLE (VALUES BETWEEN 0 AND 1)
 x2<-x/(max(x)+.1)
@@ -675,27 +676,16 @@ myStat <- function(mySample, column) {
   print("boot...")
   fitdist(mySample[column], "pareto", lower = c(0, 0), 
           start = list(scale = min(mySample[column]), shape = 1))$estimate}
-samples<-boots<-list()
+samples1<-boots<-list()
 for (i in 
-     c(100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000)) {
-  samples[toString(i)]<-list(sample_n(aida, i))
-  samples[[toString(i)]]['E']<-c(samples[[toString(i)]]['E']+1)
+     c(100, 200, 500, 1000, 5000, 10000, 20000, 50000)) {
+  sample<-samples1[paste(toString(i), 'E', sep="")]<-c(sample(aida$E+1, i))
   print(paste("Bootstrapping over sample size of: ", i, sep=""))
-  boots[toString(i)]<-list(boot(samples[[toString(i)]]$E,statistic = myStat, R = 1000))
+  boots[paste(toString(i), 'E', sep="")]<-list(boot(sample,statistic = myStat, R = 1000))
 }
 
-plotConfidInterv<-function(data, conf=.05) {
-  "plot(density(data))
-  abline(v=quantile(data, conf/2), col='red')
-  abline(v=quantile(data, 1-(conf/2)), col='red')"
-  # subset region and plot
-  plt<-ggplot(as.data.frame(data), aes(x=data)) + geom_density(colour = "black") + geom_vline(xintercept=quantile(data, .025), color='red') + geom_vline(xintercept=quantile(data, .975), color='red')
-  d <- ggplot_build(plt)$data[[1]]
-  plt + 
-    geom_area(data = subset(d, x > quantile(data,.025) & x < quantile(data,.975)), aes(x=x, y=y), fill="blue")
-}
+plotConfidInterv(boots$`10000`$t[,2], myValue = boots$`10000`$t0[2], xtitle = 'Vaffanculo')
 
-plotConfidInterv(boots$`50000`$t[,2])
 
 # For fitdistr objects:
 aidaSample <- sample_n(aida, 10000)
