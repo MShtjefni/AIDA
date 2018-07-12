@@ -412,7 +412,17 @@ getSortedPValue<-function(resultSet, testColumn='ks') {
     pValues<-append(pValues,distribution$p.value)
   }
   names(pValues)<-names(resultSet[[testColumn]])
-  return (sort(pValues, decreasing = T))
+  return (pValues[-4])
+}
+
+
+getSortedD<-function(resultSet, testColumn='ks') {
+  pValues<-c()
+  for (distribution in resultSet[[testColumn]]) {
+    pValues<-append(pValues,distribution$statistic[1])
+  }
+  names(pValues)<-names(resultSet[[testColumn]])
+  return (pValues[-4])
 }
 
 getSortedGof<-function(resultSet, measureColumn='aic') {
