@@ -18,29 +18,66 @@ loadPackages <- function(filePath) {
 
 
 loadDatasets <- function(dataDir) {
-  " Preprocessing steps: changing column types for Ateco(int), TaxID(num), year(int). Removing TradingRegion and TradingProvince columns "
-  print("Loading aidat from file")
-  load(dataDir)
-  aidat$Ateco <- as.integer(as.character(aidat$Ateco))
-  aidat$TaxID <- as.numeric(as.character(aidat$TaxID))
-  aidat$Year <- as.integer(as.character(aidat$Year))
-  aidat[which(names(aidat) %in% c("TradingRegion","TradingProvince"))] <- NULL
-  aidat<-applyInflation(aidat)
-  aidat<-addGeoArea(aidat)
-  aidat<-addSize(aidat)
+  colNames = c("Ateco", "Company", "Form", "Province", "Region", "Status", "TaxID", "Year", 
+            "B", "E", "P", "R", "Infl", "GeoArea", "Size", "Growth")
   
-  print("Getting sectors subsets")
-  aida<<-subset(aidat, Year>2006 & Year<2016 & R>=0 & E>=0); remove(aidat)
+  tryCatch({
+    suppressWarnings(warning(remove(aidat)))
+    for (name in colNames) {
+      load(paste0(dataDir, name, ".RData"))
+      if (!exists("origData"))
+        origData<-eval(parse(text = name))
+      else
+        origData<-cbind(origData, eval(parse(text = name)))
+      remove(list=name)
+    }
+    print("Loading from distinct column files.")
   
-  #manufacturing <- subset(aidat,Ateco>=101100 & Ateco<=332009 & Year>2006 & Year<2016) #subset containing all the manufacturing firms from original dataset
-  manufacturing <- subset(aida,Ateco>=101100 & Ateco<=332009 & !is.na(R) & !is.na(E))  # removing all the rows having missing values for Revenue or Employee and keeping just 2007-2015 years records
-  manufacturing <<- addSubsectorColumn(manufacturing)
-  #manufacturing <- arrange(manufacturing,TaxID,Year) #sort manufacturing firms by TaxID and by year
+  },
   
+  error = function(e) {
+    print("Loading aidat from file") 
+    tryCatch( {
+      load(paste0(dataDir,"aidat.RData"))
+      origData<<-aidat
+      for (name in colNames ) {
+        assign(toString(name), aidat[name])
+        save(list=name, file = paste0("data/",name,".RData"))
+        remove(list=name)
+      }
+    }, 
+    error = function(e) {
+      stop("No aidat file neither distinct column files found to load datasets.")
+    })
+    
+  },
   
-  restaurants<<-subset(aida,Ateco>=550000 & Ateco<570000) #subset containing all the manufacturing firms from original dataset
+  finally = {
+    
+    " Preprocessing steps: changing column types for Ateco(int), TaxID(num), year(int). 
+    Removing TradingRegion and TradingProvince columns "
+    origData$Ateco <- as.integer(as.character(origData$Ateco))
+    print("qua2")
+    origData$TaxID <- as.numeric(as.character(origData$TaxID))
+    origData$Year <- as.integer(as.character(origData$Year))
+    origData[which(names(origData) %in% c("TradingRegion","TradingProvince"))] <- NULL
+    origData<-applyInflation(origData)
+    origData<-addGeoArea(origData)
+    origData<-addSize(origData)
+    
+    print("Getting sectors subsets")
+    aida<<-subset(origData, Year>2006 & Year<2016 & R>=0 & E>=0); remove(origData)
+    
+    #manufacturing <- subset(aidat,Ateco>=101100 & Ateco<=332009 & Year>2006 & Year<2016) #subset containing all the manufacturing firms from original dataset
+    manufacturing <- subset(aida,Ateco>=101100 & Ateco<=332009 & !is.na(R) & !is.na(E))  # removing all the rows having missing values for Revenue or Employee and keeping just 2007-2015 years records
+    manufacturing <<- addSubsectorColumn(manufacturing)
+    #manufacturing <- arrange(manufacturing,TaxID,Year) #sort manufacturing firms by TaxID and by year
+    
+    restaurants<<-subset(aida,Ateco>=550000 & Ateco<570000) #subset containing all the manufacturing firms from original dataset
+    media<<-subset(aida,Ateco>=580000 & Ateco<640000) #subset containing all the manufacturing firms from original dataset
+    
+    })
   
-  media<<-subset(aida,Ateco>=580000 & Ateco<640000) #subset containing all the manufacturing firms from original dataset
-}
+  }
 
 loadPackages(paste(wdir,packagesFile,sep = ""))

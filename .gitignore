@@ -1,14 +1,3 @@
-
-Alessandro/.DS_Store
-Alessandro/.RData
-Alessandro/.Rhistory
-Alessandro/aida.RData
-Alessandro/aidat.RData
-Alessandro/manufacturing.RData
-Alessandro/.RDataTmp
-Alessandro/Image/.DS_Store
-Alessandro/power_law.RData
-*.RData
-Alessandro/Image/.DS_Store
-Alessandro/Image/Correlation/.DS_Store
-Alessandro/Image/.DS_Store
+.Rproj.user
+data/aidat.RData
+data/aidaFailed.RData

@@ -1,6 +1,6 @@
 #rm(list = ls()) #remove all the existing environment vars
 wdir <- ""
-dataFile <- "data/aidat.RData"
+dataDir <- "data/"
 source(paste(wdir, "functions.R", sep=""))
 #loadDatasets(paste(wdir,dataFile,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
 

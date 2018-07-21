@@ -1,7 +1,7 @@
 wdir <- ""
 dataFile <- "data/aidat.RData"
 source(paste(wdir, "functions.R", sep=""))
-#loadDatasets(paste(wdir,dataFile,sep="")) ###USE THIS IF YOU DON'T HAVE DATASETS IN CURRENT WORKSPACE
+#loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
 
 "...Distributions fitting functions..."
 distr <- c("norm", "lnorm", "gamma", "beta", "exp", "llogis", "weibull", "pareto")
