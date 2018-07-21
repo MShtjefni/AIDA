@@ -17,3 +17,5 @@ wesanderson
 reshape2
 scales
 boot
+cowplot
+EnvStats
