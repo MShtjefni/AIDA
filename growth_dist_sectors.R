@@ -1,36 +1,24 @@
 sample_size <-5000
 
-by_firm_medium_ID <- as.numeric(by_firm_medium$TaxID)
-by_firm_medium_year <- as.numeric(by_firm_medium$Year)
-by_firm_medium_R <- as.numeric(by_firm_medium$Revenue)
-by_firm_medium_growth <- c()
+restaurants_growth <- restaurants$Growth[!is.na(restaurants$Growth)]
+growth_restaurants <- sample(restaurants_growth, sample_size)
 
-for (i in 2:length(by_firm_medium_ID)) {
-  if (by_firm_medium_ID[i] != by_firm_medium_ID[i-1]) next
-  if (by_firm_medium_year[i] - by_firm_medium_year[i-1] != 1) next
-  by_firm_medium_growth[i] <- log(by_firm_medium_R[i]/by_firm_medium_R[i-1])
-}
+media_growth <- media$Growth[!is.na(media$Growth)]
+growth_media <- sample(media_growth, sample_size)
 
-by_firm_medium["Growth"]<-by_firm_medium_growth
-
-growth_medium_firms <-as.data.frame(by_firm_medium)
-
-growth_medium_firms <- growth_medium_firms[sample(nrow(growth_medium_firms)),] #shuffle
-
-medium_growth <- growth_medium_firms$Growth[!is.na(growth_medium_firms$Growth)]
-growth_medium <- sample(medium_growth, sample_size)
-
+#growth_media <- growth_media[growth_media >= 0]
+#############################################################################################################
 
 ############################################################################################################
-fit_norm <- fitdist(growth_medium, distr="norm", method="mle")
-fit_cauchy <- fitdist(medium_growth, distr="cauchy", method="mle")
-fit_laplace1 <-fitdist(growth_medium, distr = "laplace",  method = "mle", start=list(location=-0.1, scale=0.001))
+fit_norm <- fitdist(growth_media, distr="norm", method="mle")
+fit_cauchy <- fitdist(growth_media, distr="cauchy", method="mle")
+fit_laplace1 <-fitdist(growth_media, distr = "laplace",  method = "mle", start=list(location=-0.1, scale=0.001))
 
 est1 <- c()
 est2 <- c()
 
 for (i in 1:1000) {
-  fcauchy<-fitdist(sample(medium_growth, sample_size), method="mle", distr = "cauchy")
+  fcauchy<-fitdist(sample(media_growth, sample_size), method="mle", distr = "cauchy")
   est1[i] <- fcauchy$estimate[1]
   est2[i] <- fcauchy$estimate[2]
 }
@@ -39,17 +27,15 @@ for (i in 1:1000) {
 plotConfidInterv(est2, fit_cauchy$estimate[2], xlb="Scale parameter distribution")
 ############################################################################################################
 
-################################################################################################
-
-mean(growth_medium)
-length(growth_medium)
-shifted<- growth_medium +10 # to fit distributions that require values to be positive
+mean(growth_restaurants)
+length(growth_restaurants)
+shifted<- growth_restaurants +10 # to fit distributions that require values to be positive
 min(shifted)
-scaled <- (growth_medium - min(growth_medium) +0.000001) /(max(growth_medium) - min(growth_medium)+ 0.000002)
+scaled <- (growth_restaurants - min(growth_restaurants) +0.000001) /(max(growth_restaurants) - min(growth_restaurants)+ 0.000002)
 #fit distributions that require values to be within ]0, 1[
 
 LL2 <- function(m, s) { 
-  -sum(dlaplace(growth_medium, m, s, log=TRUE)) 
+  -sum(dlaplace(growth_restaurants, m, s, log=TRUE)) 
 }
 
 
@@ -57,21 +43,15 @@ LL3 <- function(m, s) {
   -sum(dpareto(shifted, m, s, log=TRUE)) # for dpareto, the first parameter is alpha, the second is xmin
 }
 
-#Powerlaw fit using the PowerLaw library
-# m_m = conpl$new(shifted)
-# est = estimate_xmin(m_m)
-# m_m$setXmin(est)
-# bs_p <- bootstrap_p(m_m, no_of_sims=1000, threads=8)
-# bs_p$p
 
 #Get an idea of the possible distribution for the empirical data
-descdist(growth_medium, discrete = FALSE)
+descdist(growth_restaurants, discrete = FALSE)
 
 #################################################################################################
 #Fit distributions using fitdist and mle2
 #norm, exp, gamma, beta, weibull, cauchy, pareto, logis, lnorm, laplace
 fit_laplace2 <- mle2(LL2, start=list(m=-0.1, s=0.001), method = "L-BFGS-B", lower = c(m=-0.1, s=0.001))
-fit_logis <-fitdist(growth_medium, distr="logis", method="mle")
+fit_logis <-fitdist(growth_restaurants, distr="logis", method="mle")
 fit_lnorm <- fitdist(shifted, distr="lnorm", method="mle")
 fit_pareto <- mle2(LL3, start = list(m = 1, s = min(shifted)), method = "L-BFGS-B", lower = c(m=0.001), fixed = list(s=(min(shifted))))
 fit_exp <- fitdist(shifted, distr="exp", method="mle")
@@ -107,11 +87,11 @@ summary(fit_gamma)
 summary(fit_beta)
 
 #KS test
-ks.test(growth_medium, "pnorm", fit_norm$estimate[1], fit_norm$estimate[2])
-ks.test(growth_medium, "pcauchy", fit_cauchy$estimate[1], fit_cauchy$estimate[2])
-ks.test(growth_medium, "plaplace", fit_laplace1$estimate[1], fit_laplace1$estimate[2])
-ks.test(growth_medium, "plaplace", coef(fit_laplace2)[1], coef(fit_laplace2)[2])
-ks.test(growth_medium, "plogis",fit_logis$estimate[1], fit_logis$estimate[2])
+ks.test(growth_restaurants, "pnorm", fit_norm$estimate[1], fit_norm$estimate[2])
+ks.test(growth_restaurants, "pcauchy", fit_cauchy$estimate[1], fit_cauchy$estimate[2])
+ks.test(growth_restaurants, "plaplace", fit_laplace1$estimate[1], fit_laplace1$estimate[2])
+ks.test(growth_restaurants, "plaplace", coef(fit_laplace2)[1], coef(fit_laplace2)[2])
+ks.test(growth_restaurants, "plogis",fit_logis$estimate[1], fit_logis$estimate[2])
 ks.test(shifted, "plnorm", fit_lnorm$estimate[1] , fit_lnorm$estimate[2])
 ks.test(shifted, "ppareto", coef(fit_pareto)[1], coef(fit_pareto)[2])
 ks.test(shifted, "pexp", fit_exp$estimate[1])
@@ -126,7 +106,7 @@ ks.test(scaled, "pbeta",fit_beta$estimate[1], fit_beta$estimate[2])
 # a p-value based on a logspline distribution fit
 n.sims <- 1000
 stats <- replicate(n.sims, {
-  r <- rcauchy(length(growth_medium)
+  r <- rcauchy(length(growth_restaurants)
                , fit_cauchy$estimate[1]
                , fit_cauchy$estimate[2])
   as.numeric(ks.test(r
@@ -136,7 +116,7 @@ stats <- replicate(n.sims, {
 
 fit_log <- logspline(stats)
 
-1-plogspline(ks.test(growth_medium
+1-plogspline(ks.test(growth_restaurants
                      , "pcauchy"
                      , fit_cauchy$estimate[1]
                      , fit_cauchy$estimate[2])$statistic
@@ -149,7 +129,7 @@ gof_original <- gofstat(list(fit_norm, fit_cauchy,fit_logis, fit_laplace1))
 gof_shifted <- gofstat(list(fit_lnorm, fit_exp, fit_weib, fit_gamma))
 gof_scaled <-gofstat(fit_beta)
 gof_laplace<-c(AIC(fit_laplace), BIC(fit_laplace)) # BIC is NA. It can be retrieved
-gof_pareto1<-c(AIC(fit_pareto), BIC(fit_pareto)) # using mle of {stats4} instead of mle2 
+gof_pareto<-c(AIC(fit_pareto), BIC(fit_pareto)) # using mle of {stats4} instead of mle2 
 
 
 gof_original
@@ -174,9 +154,9 @@ seqlast <- function (from, to, by)
 }
 
 breaks <- -Inf
-breaks <- append (breaks, c(seqlast(min(growth_medium),max(growth_medium),0.2), Inf))
-growth_medium.cut<-cut(growth_medium,breaks=breaks, include.lowest = TRUE) #binning data
-#table(growth_medium.cut) # frequencies of empirical data in the respective bins
+breaks <- append (breaks, c(seqlast(min(growth_restaurants),max(growth_restaurants),0.2), Inf))
+growth_restaurants.cut<-cut(growth_restaurants,breaks=breaks, include.lowest = TRUE) #binning data
+#table(growth_restaurants.cut) # frequencies of empirical data in the respective bins
 p<-c()
 for (i in 1:(length(breaks)-1)) {
   p[i] <- pcauchy(breaks[i+1],fit_cauchy$estimate[1], fit_cauchy$estimate[2])-pcauchy(breaks[i],fit_cauchy$estimate[1], fit_cauchy$estimate[2])
@@ -184,7 +164,7 @@ for (i in 1:(length(breaks)-1)) {
 
 f.os<-c()
 for (j in 1:(length(breaks)-1)) {
-  f.os[j]<- table(growth_medium.cut)[[j]]
+  f.os[j]<- table(growth_restaurants.cut)[[j]]
 }
 
 chisq.test(x=f.os, p=p)# p-value is very low, probably due to binning choice
@@ -198,14 +178,15 @@ chisq.test(x=f.os, simulate.p.value = T) # test with Monte Carlo simulated p-val
 
 #Visualise the obtained distributions
 
-x<-medium_growth #(normal, cauchy, laplace, logis)
+x<-growth_restaurants #(normal, cauchy, laplace, logis)
 x<-shifted #(lnorm, pareto, exp, weib, gamma)
 x<-scaled #(beta)
 
 par(mfrow=c(1,1))
-hist(x, prob=T, breaks=c(seqlast(min(medium_growth),max(medium_growth),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for medium firm growth distribution")
-grid(5,5)
-hist(x, prob=T, breaks=c(seqlast(min(medium_growth),max(medium_growth),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for medium firm growth distribution")
+
+
+hist(x, prob=T, breaks="scott", xlab="growth_restaurants rate", col="grey", main="Empirical small growth Rate Distribution")
+
 curve(dnorm(x, fit_norm$estimate[1], fit_norm$estimate[2]), add=T,col = 1, lwd=2)
 curve(dcauchy(x, fit_cauchy$estimate[1], fit_cauchy$estimate[2]), add=T,col = 2, lwd=2)
 curve(dlaplace(x,  fit_laplace1$estimate[1] , fit_laplace1$estimate[2]), add=T, col=3, lwd=2)
@@ -219,11 +200,6 @@ curve(dgamma(x, fit_gamma$estimate[1], fit_gamma$estimate[2]), add=T,col = 10, l
 curve(dbeta(x, fit_beta$estimate[1], fit_beta$estimate[2]), add=T,col = 11, lwd=2)
 legend("topright", c("Normal fit", "Cauchy fit", "Laplace fit"), col=c(1,2,3), lwd=3)
 
-
-kurtosis(medium_growth)
-skewness(medium_growth)
-mean(medium_growth)
-var(medium_growth)
 
 # Visualise some Q-Q and P-P plots
 
@@ -239,16 +215,16 @@ ppcomp(fit_cauchy)
 
 #For other objects:
 #QQ plot
-lengr <- length(growth_medium)
+lengr <- length(growth_restaurants)
 y <- rlaplace(lengr, coef(fit_laplace2)[1], coef(fit_laplace2)[2])
-qqplot(y, growth_medium, xlab="Theoretical Quantiles", ylab = "Empirical Quantiles")
+qqplot(y, growth_restaurants, xlab="Theoretical Quantiles", ylab = "Empirical Quantiles")
 qqline(rlaplace(lengr), col = 2,lwd=2,lty=2, distribution = qlaplace)
 #qnorm(0.5) # for a given surface under the std normal dist (50% in this case) give me the corresponding z score
 
 #CDF plot:
 #lines(ecdf(rcauchy(lengr, fit_cauchy$estimate[1], fit_cauchy$estimate[2])), col="blue", cex=0.5, xlim=c(-1,1))
 #plot(ecdf(rlaplace(lengr,  0.0315464, 0.0571342)), col="blue", cex=0.5)
-plot(ecdf(growth_medium),cex=0.5, col="red")
+plot(ecdf(growth_restaurants),cex=0.5, col="red")
 curve(pcauchy(x,fit_cauchy$estimate[1], fit_cauchy$estimate[2]), add = T , cex=0.5, col="blue")
 curve(plaplace(x,fit_laplace1$estimate[1], fit_laplace1$estimate[2]), add = T , cex=0.5, col="green")
 curve(plaplace(x,coef(fit_laplace2)[1], coef(fit_laplace2)[2]), add = T ,  cex=0.5,col="purple")

@@ -15,11 +15,12 @@ library(boot)
 library(kimisc)
 
 set.seed(1000)
-#secondo il metodo del MLE, valutando il valore AIC, la distribuzione di Employee segue una distribuzione paretiana mentre
+#secondo il metodo del MLE, valutando il valore AIC, 
+#la distribuzione di Employee segue una distribuzione paretiana mentre
 #Revenue segue una distribuzione di Weibull
 
 #prendo il dataset manufacturing
-manufacturing = get(load("manufacturing.RData"))
+manufacturing = get(load("aida2.RData"))
 nrow(manufacturing)# 1.027.140 records
 
 E = manufacturing$E
@@ -283,30 +284,73 @@ par(mfrow=c(1,1))
   gofstat(fit.cauchy.R)
   
 ##### RISULTATI ####
-  legend =list("Normal","Log Normal","Gamma","Weibull","Exponential","Lgistica","Power Law","Cauchy")
-  distr.E = list(fit.norm.E,fit.lnorm.E,fit.gamma.E,fit.weibull.E,fit.exp.E,fit.llogis.E,fit.pareto.E,fit.cauchy.E)
-  distr.R = list(fit.norm.R,fit.lnorm.R,fit.gamma.R,fit.weibull.R,fit.exp.R,fit.llogis.R,fit.pareto.R,fit.cauchy.R)
-  par(mfrow=c(1,2))
-  cdfcomp(distr.E,legendtext = legend,xlab = "Employee") # compare cumulative
-  cdfcomp(distr.R,legendtext = legend,xlab = "Revenue") # compare cumulative
-  qqcomp(fit.lnorm.E,legendtext = "Log Normal",xlab = "Employee") # compare quartiles
-  qqcomp(fit.weibull.R,legendtext = "Weibull",xlab = "Revenue")
+  colors =list("")
+  legend =list("LNormal","Gamma","Weibull","Exponential","Llogis","Pareto")
+  #
+  distr.E = list(
+                 aidaS[["200 E"]][["fits"]][["lnorm"]],
+                 aidaS[["200 E"]][["fits"]][["gamma"]],
+                 aidaS[["200 E"]][["fits"]][["weibull"]],
+                 aidaS[["200 E"]][["fits"]][["exp"]],
+                 aidaS[["200 E"]][["fits"]][["llogis"]],
+                 aidaS[["200 E"]][["fits"]][["pareto"]])
+  distr.R = list(
+                 aidaS[["200 R"]][["fits"]][["lnorm"]],
+                 aidaS[["200 R"]][["fits"]][["gamma"]],
+                 aidaS[["200 R"]][["fits"]][["weibull"]],
+                 aidaS[["200 R"]][["fits"]][["exp"]],
+                 aidaS[["200 R"]][["fits"]][["llogis"]],
+                 aidaS[["200 R"]][["fits"]][["pareto"]])
+  
+  
+  par(mfrow=c(2,2))
+  cdfcomp(distr.R,legendtext = legend,xlab = "Revenue",lwd=2) # compare cumulative
+  cdfcomp(distr.R,xlim=c(2,60000),ylim=c(0.7,1.0),legendtext = legend,xlab = "Revenue",lwd=2) # compare cumulative
+  cdfcomp(restaurS[["1000 R"]][["fits"]][["weibull"]],legendtext = "Weibull",xlab = "Theoretical Distribution",main = NULL) # compare cumulative
+  cdfcomp(distr.E,xlim=c(2,200),ylim=c(0.7,1.0),legendtext = legend,xlab = "Employee",lwd=2) # compare cumulative
   par(mfrow=c(1,1))
   
+  par(mfrow=c(1,2))
+  qqcomp(distr.R,legendtext = legend,xlab = "Revenue",xlim = c(0,100000),ylim = c(0,70000)) # compare quartiles
+  qqcomp(distr.E,legendtext = legend,xlab = "Employee",xlim = c(0,150),ylim = c(0,750))
+  par(mfrow=c(1,1))
+  #
   
 
 #### INTERVALLI DI CONFIDENZA####
   #EMPLOYEE 
-  boot =  bootdist(fit.lnorm.E, niter = 100000,parallel="multicore",ncpus = 4)
-  q = quantile(boot.lnorm.E$estim[,1], c(0.025, 0.975))
-  q
-  boot.lnorm.E$CI 
-  int1 = boot.lnorm.E$estim[,1]
-  int = int1[int1 >=q[1] & int1<=q[2]]
-  t.test(int1,mu=fit.lnorm.E$estimate[1],conf.level = 0.95,alternative = c("two.sided"))
-  w = wilcox.test(int,mu=fit.lnorm.E$estimate[1],conf.level = 0.5,alternative = c("two.sided"))
-  w$alternative 
+  boot =  bootdist(aidaS[["200 E"]][["fits"]][["weibull"]], niter = 1000,parallel="multicore",ncpus = 4)
+  q = quantile(boot$estim[,2], c(0.025, 0.975))
+  plotConfidInterv(boot$estim[,1],aidaS[["200 E"]][["fits"]][["weibull"]][["estimate"]][["shape"]])
+  plotConfidInterv(boot$estim[,2],aidaS[["200 E"]][["fits"]][["weibull"]][["estimate"]][["scale"]])
+   plotConfidInterv<-function(data, myValue=F, conf=.05) {
+    "plot(density(data))
+    abline(v=quantile(data, conf/2), col='red')
+    abline(v=quantile(data, 1-(conf/2)), col='red')"
+    # subset region and plot
+    plt<-ggplot(as.data.frame(data), aes(x=data)) + geom_density(colour = "black", size=1.2) 
+    d <- ggplot_build(plt)$data[[1]]
+    ypos1 <- d$y[match(x=T, d$x>=quantile(data,conf/2))]
+    ypos2 <- d$y[match(x=T, d$x>=quantile(data,1-conf/2))]
+    
+    plt <- plt + 
+      geom_area(data = subset(d, x >= quantile(data,.025) & x <= quantile(data,.975)), aes(x=x, y=y), fill="grey69") +
+      geom_segment(aes(x=quantile(data, .025), xend=quantile(data, .025), y=0, yend=ypos1), color="navyblue", size=1.2) + 
+      geom_segment(aes(x=quantile(data, .975), xend=quantile(data, .975), y=0, yend=ypos2), color="navyblue", size=1.2)
+    if(myValue) {
+      myColor='red'
+      if (myValue<quantile(data,conf/2) | myValue>quantile(data,1-conf/2))
+        myColor='red'
+      ypos <- d$y[match(x=T, d$x>=myValue)]
+      plt <- plt + geom_segment(aes(x=myValue, xend=myValue, y=0, yend=ypos), color=myColor, size=1.2)
+    }
+    plt + geom_density(colour = "black", size=1.2)
+    #return(d)
+  }
   
   
   
-  
+
+   
+   
+#### prova

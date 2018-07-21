@@ -19,6 +19,22 @@ library(ggpubr)
 
 set.seed(1000)
 
+#INTERVALLO DI CONFIDENZA PER VEDERE SE SI INTRODUCONO BIAS
+correlazioni <-c()
+for(i in 1:1000){
+  samples = sample.rows(aida,100000,replace = FALSE) #sample di aida
+  samples=samples[c("E","R")]
+  cor.res.man <- boot(data=with(x.man, cbind(E, R)),statistic=cor.boot.man, R=10000)
+  correlazioni[i]<-corr
+}
+q = quantile(correlazioni,c(0.025,0.975))
+q
+corrEmp = 0.7147149
+plotConfidInterv(correlazioni,corrEmp)
+
+var()
+
+
 ##### AIDA ####
 ##### CORRELATION ANALYSIS ####
 #recupero il dataset di aida
@@ -488,7 +504,7 @@ title(main="Pearson",sub="Manufacturing",line = -2)
 corrplot(corr.s.man,method = "number", type="upper", order="hclust")
 title(main="Spearman",sub="Manufacturing",line= -2)
 #RESTAURANT
-corrplot(corr.p.res,method = "number", type="upper", order="hclust",)
+corrplot(corr.p.res,method = "number", type="upper", order="hclust")
 title(main="Pearson",sub="Restaurant",line = -2)
 corrplot(corr.s.res,method = "number", type="upper", order="hclust")
 title(main="Spearman",sub="Restaurant",line= -2)
