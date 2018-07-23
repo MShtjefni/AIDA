@@ -18,7 +18,7 @@ Then we've also tried to distinguish the behaviours within distinct subsamples o
 ## Tools and Technologies used
 All the analysis have been done with <b>R</b> (version 3.5.0). 
 
-To perform useful operations on our data we've used the <b>dplyr</b> package; for power law distribution we've used <b>poweRlaw</b> library. For plotting we've mostly used <b>ggplot</b> package.
+To perform useful operations on our data we've used the <b>dplyr</b> package; for power law distribution we've used <b>poweRlaw</b> library. For plotting we've mostly used <b>ggplot</b> package. Any other needed package is listed in packages.txt file.
 
 ## Files description
 A brief description of the distinct directories and files you may find in this repository:
