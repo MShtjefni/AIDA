@@ -2,8 +2,8 @@ wdir <- ""
 dataDir <- "data/"
 packagesFile <- "packages.txt"
 #source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
-source(paste(wdir, "growth_rate_dist.R", sep="")) ### this also loads every needed package
 #loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
+source(paste(wdir, "growth_rate_dist.R", sep=""))
 
 
 sample_size <- 800
@@ -212,7 +212,8 @@ descdist(growth_manufacturing, discrete = FALSE)
 #################################################################################################
 #Fit distributions using fitdist and mle2
 #norm, exp, gamma, beta, weibull, cauchy, pareto, logis, lnorm, laplace
-#fit_laplace2 <- mle2(LL2, start=list(m=-0.1, s=0.001), method = "L-BFGS-B", lower = c(m=-0.1, s=0.001))
+
+#growth <- growth_manufacturing; fit_laplace2 <- mle2(LL2, start=list(m=-0.1, s=0.001), method = "L-BFGS-B", lower = c(m=-0.1, s=0.001))
 fit_lnorm <- fitdist(shifted, distr="lnorm", method="mle")
 fit_pareto <- mle2(LL3, start = list(m = 1, s = min(shifted)), method = "L-BFGS-B", lower = c(m=0.001), fixed = list(s=(min(shifted))))
 fit_exp <- fitdist(shifted, distr="exp", method="mle")
@@ -319,17 +320,6 @@ gof_original$chisqpvalue # returns the Chi-square p-values for the given fits. (
 
 #####################################################################################
 
-#Chi-square test for goodness of fit
-seqlast <- function (from, to, by) 
-{
-  vec <- do.call(what = seq, args = list(from, to, by))
-  if ( tail(vec, 1) != to ) {
-    return(c(vec, to))
-  } else {
-    return(vec)
-  }
-}
-
 breaks <- -Inf
 breaks <- append (breaks, c(seqlast(min(growth_manufacturing),max(growth_manufacturing),0.1), Inf))
 #breaks
@@ -372,20 +362,23 @@ ks.test(quinquennal_growth, lag_years_growth)
 hist(x, prob=T, breaks=c(seqlast(min(lag_years_growth),max(lag_years_growth),0.3)),xlim=c(-15, 15), xlab="Growth", col="grey", main="Nine year growth distribution")
 grid(5,5)
 hist(x, add=T,prob=T, breaks=c(seqlast(min(lag_years_growth),max(lag_years_growth),0.3)), xlim=c(-15,15),xlab="Growth", col="grey", main="Nine year growth distribution")
-#curve(dnorm(x, fit_norm$estimate[1], fit_norm$estimate[2]), add=T,col = 1, lwd=2)
+curve(dnorm(x, fit_norm$estimate[1], fit_norm$estimate[2]), add=T,col = 1, lwd=2)
 #curve(dcauchy(x, fit_cauchy_growth_2015$estimate[1], fit_cauchy_growth_2015$estimate[2]), add=T,col = 2, lwd=2)
 curve(dcauchy(x, fit_cauchy_growth_lag_years$estimate[1], fit_cauchy_growth_lag_years$estimate[2]), add=T,col = 2, lwd=2)
 curve(dlaplace(x,  fit_laplace1$estimate[1] , fit_laplace1$estimate[2]), add=T, col=4, lwd=2)
-#curve(dlaplace(x,  coef(fit_laplace2)[1] , coef(fit_laplace2)[2]), add=T, col=7, lwd=2)
+#curve(dlaplace(x,  coef(fit_laplace2)[1] , coef(fit_laplace2)[2]), add=T, col=5, lwd=2)
 curve(dlogis(x, fit_logis$estimate[1], fit_logis$estimate[2]), add=T,col = 7, lwd=2)
-#curve(dllogis(x, fit_llogis$estimate[1], fit_llogis$estimate[2]), add=T,col = 5, lwd=2)
+legend("topright", c("Normal", "Cauchy", "Laplace", "Logistic"), col=c(1,2,4,7), lwd=3)
+x<-shifted #(lnorm, pareto, exp, weib, gamma)
+hist(x, add = F,  prob=T, breaks=c(seqlast(min(shifted),max(shifted),0.2)),xlim=c(0, 20), xlab="Growth rate", col="light grey", main="Empirical growth rate distribution in manufacturing")
 curve(dlnorm(x, fit_lnorm$estimate[1], fit_lnorm$estimate[2]), add=T,col = 6, lwd=2)
 curve(dpareto(x,  coef(fit_pareto)[1] , coef(fit_pareto)[2]), add=T,col =7 , lwd=2)
 curve(dexp(x, fit_exp$estimate[1]), add=T,col = 8, lwd=2)
 curve(dweibull(x, fit_weib$estimate[1], fit_weib$estimate[2]), add=T,col = 9, lwd=2)
 curve(dgamma(x, fit_gamma$estimate[1], fit_gamma$estimate[2]), add=T,col = 10, lwd=2)
+x<-scaled #(beta)
+hist(x, add = F,  prob=T, breaks=c(seqlast(min(scaled),max(scaled),0.02)),xlim=c(0, 1), xlab="Growth rate", col="light grey", main="Empirical growth rate distribution in manufacturing")
 curve(dbeta(x, fit_beta$estimate[1], fit_beta$estimate[2]), add=T,col = 11, lwd=2)
-legend("topright", c("Normal", "Cauchy"), col=c(1,2), lwd=3)
 
 
 # Visualise some Q-Q and P-P plots

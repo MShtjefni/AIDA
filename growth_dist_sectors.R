@@ -3,6 +3,7 @@ wdir <- ""
 dataDir <- "data/"
 packagesFile <- "packages.txt"
 source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
+#loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
 
 sample_size <-5000
 
@@ -47,7 +48,7 @@ descdist(growth_restaurants, discrete = FALSE)
 #################################################################################################
 #Fit distributions using fitdist and mle2
 #norm, exp, gamma, beta, weibull, cauchy, pareto, logis, lnorm, laplace
-fit_laplace2 <- mle2(LL2, start=list(m=-0.1, s=0.001), method = "L-BFGS-B", lower = c(m=-0.1, s=0.001))
+growth<-growth_restaurants; fit_laplace2 <- mle2(LL2, start=list(m=-0.1, s=0.001), method = "L-BFGS-B", lower = c(m=-0.1, s=0.001))
 fit_logis <-fitdist(growth_restaurants, distr="logis", method="mle")
 fit_lnorm <- fitdist(shifted, distr="lnorm", method="mle")
 fit_pareto <- mle2(LL3, start = list(m = 1, s = min(shifted)), method = "L-BFGS-B", lower = c(m=0.001), fixed = list(s=(min(shifted))))
@@ -139,17 +140,6 @@ gof_scaled
 
 #####################################################################################
 
-#Chi-square test for goodness of fit
-seqlast <- function (from, to, by) 
-{
-  vec <- do.call(what = seq, args = list(from, to, by))
-  if ( tail(vec, 1) != to ) {
-    return(c(vec, to))
-  } else {
-    return(vec)
-  }
-}
-
 breaks <- -Inf
 breaks <- append (breaks, c(seqlast(min(growth_restaurants),max(growth_restaurants),0.2), Inf))
 growth_restaurants.cut<-cut(growth_restaurants,breaks=breaks, include.lowest = TRUE) #binning data
@@ -175,27 +165,26 @@ chisq.test(x=f.os, simulate.p.value = T) # test with Monte Carlo simulated p-val
 
 #Visualise the obtained distributions
 
-x<-growth_restaurants #(normal, cauchy, laplace, logis)
-x<-shifted #(lnorm, pareto, exp, weib, gamma)
-x<-scaled #(beta)
-
 par(mfrow=c(1,1))
-
-
-hist(x, prob=T, breaks="scott", xlab="growth_restaurants rate", col="grey", main="Empirical small growth Rate Distribution")
-
+x<-growth_restaurants #(normal, cauchy, laplace, logis)
+hist(x, prob=T, breaks="scott", xlab="growth_restaurants rate", col="grey", main="Empirical growth Rate Distribution")
 curve(dnorm(x, fit_norm$estimate[1], fit_norm$estimate[2]), add=T,col = 1, lwd=2)
 curve(dcauchy(x, fit_cauchy$estimate[1], fit_cauchy$estimate[2]), add=T,col = 2, lwd=2)
-curve(dlaplace(x,  fit_laplace1$estimate[1] , fit_laplace1$estimate[2]), add=T, col=3, lwd=2)
-curve(dlaplace(x,  coef(fit_laplace2)[1] , coef(fit_laplace2)[2]), add=T, col=4, lwd=2)
-curve(dlogis(x, fit_logis$estimate[1], fit_logis$estimate[2]), add=T,col = 5, lwd=2)
-curve(dlnorm(x, fit_lnorm$estimate[1], fit_lnorm$estimate[2]), add=T,col = 6, lwd=2)
+curve(dlaplace(x,  fit_laplace1$estimate[1] , fit_laplace1$estimate[2]), add=T, col=4, lwd=2)
+#curve(dlaplace(x,  coef(fit_laplace2)[1] , coef(fit_laplace2)[2]), add=T, col=5, lwd=2)
+curve(dlogis(x, fit_logis$estimate[1], fit_logis$estimate[2]), add=T,col = 7, lwd=2)
+legend("topright", c("Normal", "Cauchy", "Laplace", "Logistic"), col=c(1,2,4,7), lwd=3)
+x<-shifted #(lnorm, pareto, exp, weib, gamma)
+hist(x, add = F,  prob=T, breaks=c(seqlast(min(shifted),max(shifted),0.2)),xlim=c(0, 20), xlab="Growth rate", col="light grey", main="Empirical growth rate distribution in HORECA")
+curve(dlnorm(x, fit_lnorm$estimate[1], fit_lnorm$estimate[2]), add=T,col =6, lwd=2)
 curve(dpareto(x,  coef(fit_pareto)[1] , coef(fit_pareto)[2]), add=T,col =7 , lwd=2)
 curve(dexp(x, fit_exp$estimate[1]), add=T,col = 8, lwd=2)
 curve(dweibull(x, fit_weib$estimate[1], fit_weib$estimate[2]), add=T,col = 9, lwd=2)
 curve(dgamma(x, fit_gamma$estimate[1], fit_gamma$estimate[2]), add=T,col = 10, lwd=2)
+x<-scaled #(beta)
+hist(x, add = F,  prob=T, breaks=c(seqlast(min(scaled),max(scaled),0.02)),xlim=c(0, 1), xlab="Growth rate", col="light grey", main="Empirical growth rate distribution in HORECA")
 curve(dbeta(x, fit_beta$estimate[1], fit_beta$estimate[2]), add=T,col = 11, lwd=2)
-legend("topright", c("Normal fit", "Cauchy fit", "Laplace fit"), col=c(1,2,3), lwd=3)
+
 
 
 # Visualise some Q-Q and P-P plots

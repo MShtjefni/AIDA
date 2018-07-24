@@ -138,7 +138,16 @@ groupByGrowth <- function(data) {
 
 #optim(c(0,1), LL1, NULL, method="L-BFGS-B", lower = c(0,2))
 
-
+#Chi-square test for goodness of fit
+seqlast <- function (from, to, by) 
+{
+  vec <- do.call(what = seq, args = list(from, to, by))
+  if ( tail(vec, 1) != to ) {
+    return(c(vec, to))
+  } else {
+    return(vec)
+  }
+}
 
 # the function below returns the sum of negative log likelihoods that 
 # will be passed to the mle2 function (bbmle package) to be minimized. 

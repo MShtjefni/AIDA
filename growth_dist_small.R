@@ -2,37 +2,18 @@ wdir <- ""
 dataDir <- "data/"
 packagesFile <- "packages.txt"
 #source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
-source(paste(wdir, "growth_rate_dist.R", sep="")) ### this also loads every needed package
-loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
+#loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
+source(paste(wdir, "growth_rate_dist.R", sep=""))
 
-small_growth <- groupByGrowth(small_firms)
-medium_growth <- groupByGrowth(medium_firms)
-large_growth <- groupByGrowth(large_firms)
+small_growth <- groupByGrowth(small_firms)$Growth
+medium_growth <- groupByGrowth(medium_firms)$Growth
+large_growth <- groupByGrowth(large_firms)$Growth
 
+#small_growth <- growth_small_firms$Growth[!is.na(growth_small_firms$Growth)]
 sample_size <-5000
+growth_small <- sample(small_growth, sample_size)
 
-by_firm_small_ID <- as.numeric(by_firm_small$TaxID)
-by_firm_small_year <- as.numeric(by_firm_small$Year)
-by_firm_small_R <- as.numeric(by_firm_small$Revenue)
-by_firm_small_growth <- c()
-
-for (i in 2:length(by_firm_small_ID)) {
-  if (by_firm_small_ID[i] != by_firm_small_ID[i-1]) next
-  if (by_firm_small_year[i] - by_firm_small_year[i-1] != 1) next
-  by_firm_small_growth[i] <- log(by_firm_small_R[i]/by_firm_small_R[i-1])
-}
-by_firm_small_growth<-append(by_firm_small_growth,NA)
-
-by_firm_small["Growth"]<-by_firm_small_growth
-
-
-growth_small_firms <-as.data.frame(by_firm_small)
-
-growth_small_firms <- growth_small_firms[sample(nrow(growth_small_firms)),] #shuffle
-
-small_growth <- growth_small_firms$Growth[!is.na(growth_small_firms$Growth)]
 anyNA(small_growth)
-growth_small <- growth <- sample(small_growth, sample_size)
 
 scaled_x <- (medium_growth - min(medium_growth)) /(max(medium_growth) - min(medium_growth))
 scaled_y <- (large_growth - min(large_growth)) /(max(large_growth) - min(large_growth))
@@ -52,13 +33,13 @@ for (i in 1:1000) {
 }
 
 
-plotConfidInterv(est2, fit_cauchy$estimate[2], xlb="Scale parameter distribution")
+plotConfidInterv(est2, fit_cauchy$estimate[2], xtitle ="Scale parameter distribution")
 ############################################################################################################
 
 ###################################################################################################
 mean(growth_small)
 length(growth_small)
-shifted<- growth_small + abs(min(growth_small)) + .01 # to fit distributions that require values to be positive
+shifted<- growth_small + abs(min(growth_small)) + .000001 # to fit distributions that require values to be positive
 min(shifted)
 scaled <- (growth_small - min(growth_small) +0.000001) /(max(growth_small) - min(growth_small)+ 0.000002)
 #fit distributions that require values to be within ]0, 1[
@@ -70,7 +51,7 @@ descdist(growth_small, discrete = FALSE)
 #################################################################################################
 #Fit distributions using fitdist and mle2
 #norm, exp, gamma, beta, weibull, cauchy, pareto, logis, lnorm, laplace
-fit_laplace2 <- mle2(LL2, start=list(m=-0.1, s=0.001), method = "L-BFGS-B", lower = c(m=-0.1, s=0.001))
+growth <- growth_small; fit_laplace2 <- mle2(LL2, start=list(m=-0.1, s=0.001), method = "L-BFGS-B", lower = c(m=-0.1, s=0.001))
 fit_logis <-fitdist(growth_small, distr="logis", method="mle")
 fit_lnorm <- fitdist(shifted, distr="lnorm", method="mle")
 fit_pareto <- mle2(LL3, start = list(m =1, s = min(shifted)), method = "L-BFGS-B", lower = c(m=0.001), fixed = list(s=(min(shifted))))
@@ -162,17 +143,6 @@ gof_scaled
 
 #####################################################################################
 
-#Chi-square test for goodness of fit
-seqlast <- function (from, to, by) 
-{
-  vec <- do.call(what = seq, args = list(from, to, by))
-  if ( tail(vec, 1) != to ) {
-    return(c(vec, to))
-  } else {
-    return(vec)
-  }
-}
-
 breaks <- -Inf
 breaks <- append (breaks, c(seqlast(min(growth_small),max(growth_small),0.2), Inf))
 growth_small.cut<-cut(growth_small,breaks=breaks, include.lowest = TRUE) #binning data
@@ -203,27 +173,28 @@ var(growth_small)
 
 #Visualise the obtained distributions
 
-x<-growth_small #(normal, cauchy, laplace, logis)
-x<-shifted #(lnorm, pareto, exp, weib, gamma)
-x<-scaled #(beta)
 
 par(mfrow=c(1,1))
-
-hist(x, prob=T, breaks=c(seqlast(min(growth_small),max(growth_small),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for small firm growth distribution")
+x<-growth_small #(normal, cauchy, laplace, logis)
 grid(5,5)
 hist(x, prob=T, breaks=c(seqlast(min(growth_small),max(growth_small),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for small firm growth distribution")
 curve(dnorm(x, fit_norm$estimate[1], fit_norm$estimate[2]), add=T,col = 1, lwd=2)
 curve(dcauchy(x, fit_cauchy$estimate[1], fit_cauchy$estimate[2]), add=T,col = 2, lwd=2)
-curve(dlaplace(x,  fit_laplace1$estimate[1] , fit_laplace1$estimate[2]), add=T, col=3, lwd=2)
-curve(dlaplace(x,  coef(fit_laplace2)[1] , coef(fit_laplace2)[2]), add=T, col=4, lwd=2)
-curve(dlogis(x, fit_logis$estimate[1], fit_logis$estimate[2]), add=T,col = 5, lwd=2)
-curve(dlnorm(x, fit_lnorm$estimate[1], fit_lnorm$estimate[2]), add=T,col = 6, lwd=2)
+curve(dlaplace(x,  fit_laplace1$estimate[1] , fit_laplace1$estimate[2]), add=T, col=4, lwd=2)
+#curve(dlaplace(x,  coef(fit_laplace2)[1] , coef(fit_laplace2)[2]), add=T, col=3, lwd=2)
+curve(dlogis(x, fit_logis$estimate[1], fit_logis$estimate[2]), add=T,col = 7, lwd=2)
+legend("topright", c("Normal", "Cauchy", "Laplace", "Logistic"), col=c(1,2,4,7), lwd=3)
+x<-shifted #(lnorm, pareto, exp, weib, gamma)
+hist(x, add = F,  prob=T, breaks=c(seqlast(min(shifted),max(shifted),0.2)),xlim=c(0, 20), xlab="Growth rate", col="light grey", main="Empirical growth rate distribution in small firms")
+curve(dlnorm(x, fit_lnorm$estimate[1], fit_lnorm$estimate[2]), add=T,col =6, lwd=2)
 curve(dpareto(x,  coef(fit_pareto)[1] , coef(fit_pareto)[2]), add=T,col =7 , lwd=2)
 curve(dexp(x, fit_exp$estimate[1]), add=T,col = 8, lwd=2)
 curve(dweibull(x, fit_weib$estimate[1], fit_weib$estimate[2]), add=T,col = 9, lwd=2)
 curve(dgamma(x, fit_gamma$estimate[1], fit_gamma$estimate[2]), add=T,col = 10, lwd=2)
+x<-scaled #(beta)
+hist(x, add = F,  prob=T, breaks=c(seqlast(min(scaled),max(scaled),0.02)),xlim=c(0, 1), xlab="Growth rate", col="light grey", main="Empirical growth rate distribution in small firms")
 curve(dbeta(x, fit_beta$estimate[1], fit_beta$estimate[2]), add=T,col = 11, lwd=2)
-legend("topright", c("Normal fit", "Cauchy fit", "Laplace fit"), col=c(1,2,3), lwd=3)
+
 
 
 # Visualise some Q-Q and P-P plots
