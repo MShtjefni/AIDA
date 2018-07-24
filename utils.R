@@ -31,12 +31,12 @@ loadDatasets <- function(dataDir) {
         origData<-cbind(origData, eval(parse(text = name)))
       remove(list=name)
     }
-    print("Loading from distinct column files.")
+    print("Loading dataset from distinct column files.")
   
   },
   
   error = function(e) {
-    print("Loading aidat from file") 
+    print("Loading original dataset from original file") 
     tryCatch( {
       load(paste0(dataDir,"aidat.RData"))
       origData<<-aidat
@@ -57,7 +57,6 @@ loadDatasets <- function(dataDir) {
     " Preprocessing steps: changing column types for Ateco(int), TaxID(num), year(int). 
     Removing TradingRegion and TradingProvince columns "
     origData$Ateco <- as.integer(as.character(origData$Ateco))
-    print("qua2")
     origData$TaxID <- as.numeric(as.character(origData$TaxID))
     origData$Year <- as.integer(as.character(origData$Year))
     origData[which(names(origData) %in% c("TradingRegion","TradingProvince"))] <- NULL

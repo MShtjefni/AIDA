@@ -1,29 +1,21 @@
+wdir <- ""
+dataDir <- "data/"
+packagesFile <- "packages.txt"
+#source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
+source(paste(wdir, "growth_rate_dist.R", sep="")) ### this also loads every needed package
+loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
+
+small_growth <- groupByGrowth(small_firms)
+medium_growth <- groupByGrowth(medium_firms)
+large_growth <- groupByGrowth(large_firms)
+
 sample_size <-5000
-
-by_firm_medium_ID <- as.numeric(by_firm_medium$TaxID)
-by_firm_medium_year <- as.numeric(by_firm_medium$Year)
-by_firm_medium_R <- as.numeric(by_firm_medium$Revenue)
-by_firm_medium_growth <- c()
-
-for (i in 2:length(by_firm_medium_ID)) {
-  if (by_firm_medium_ID[i] != by_firm_medium_ID[i-1]) next
-  if (by_firm_medium_year[i] - by_firm_medium_year[i-1] != 1) next
-  by_firm_medium_growth[i] <- log(by_firm_medium_R[i]/by_firm_medium_R[i-1])
-}
-
-by_firm_medium["Growth"]<-by_firm_medium_growth
-
-growth_medium_firms <-as.data.frame(by_firm_medium)
-
-growth_medium_firms <- growth_medium_firms[sample(nrow(growth_medium_firms)),] #shuffle
-
-medium_growth <- growth_medium_firms$Growth[!is.na(growth_medium_firms$Growth)]
-growth_medium <- sample(medium_growth, sample_size)
+growth_medium <- growth <- sample(medium_growth, sample_size)
 
 
 ############################################################################################################
 fit_norm <- fitdist(growth_medium, distr="norm", method="mle")
-fit_cauchy <- fitdist(medium_growth, distr="cauchy", method="mle")
+fit_cauchy <- fitdist(growth_medium, distr="cauchy", method="mle")
 fit_laplace1 <-fitdist(growth_medium, distr = "laplace",  method = "mle", start=list(location=-0.1, scale=0.001))
 
 est1 <- c()
@@ -36,26 +28,18 @@ for (i in 1:1000) {
 }
 
 
-plotConfidInterv(est2, fit_cauchy$estimate[2], xlb="Scale parameter distribution")
+plotConfidInterv(est2, fit_cauchy$estimate[2], xtitle = "Scale parameter distribution")
 ############################################################################################################
 
 ################################################################################################
 
 mean(growth_medium)
 length(growth_medium)
-shifted<- growth_medium +10 # to fit distributions that require values to be positive
+shifted<- growth_medium + abs(min(growth_medium)) + .01 # to fit distributions that require values to be positive
 min(shifted)
 scaled <- (growth_medium - min(growth_medium) +0.000001) /(max(growth_medium) - min(growth_medium)+ 0.000002)
 #fit distributions that require values to be within ]0, 1[
 
-LL2 <- function(m, s) { 
-  -sum(dlaplace(growth_medium, m, s, log=TRUE)) 
-}
-
-
-LL3 <- function(m, s) {
-  -sum(dpareto(shifted, m, s, log=TRUE)) # for dpareto, the first parameter is alpha, the second is xmin
-}
 
 #Powerlaw fit using the PowerLaw library
 # m_m = conpl$new(shifted)
@@ -148,8 +132,8 @@ fit_log <- logspline(stats)
 gof_original <- gofstat(list(fit_norm, fit_cauchy,fit_logis, fit_laplace1))
 gof_shifted <- gofstat(list(fit_lnorm, fit_exp, fit_weib, fit_gamma))
 gof_scaled <-gofstat(fit_beta)
-gof_laplace<-c(AIC(fit_laplace), BIC(fit_laplace)) # BIC is NA. It can be retrieved
-gof_pareto1<-c(AIC(fit_pareto), BIC(fit_pareto)) # using mle of {stats4} instead of mle2 
+gof_laplace<-c(AIC(fit_laplace2), BIC(fit_laplace2)) # BIC is NA. It can be retrieved
+gof_pareto<-c(AIC(fit_pareto), BIC(fit_pareto)) # using mle of {stats4} instead of mle2 
 
 
 gof_original
@@ -198,14 +182,14 @@ chisq.test(x=f.os, simulate.p.value = T) # test with Monte Carlo simulated p-val
 
 #Visualise the obtained distributions
 
-x<-medium_growth #(normal, cauchy, laplace, logis)
+x<-growth_medium #(normal, cauchy, laplace, logis)
 x<-shifted #(lnorm, pareto, exp, weib, gamma)
 x<-scaled #(beta)
 
 par(mfrow=c(1,1))
-hist(x, prob=T, breaks=c(seqlast(min(medium_growth),max(medium_growth),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for medium firm growth distribution")
+hist(x, prob=T, breaks=c(seqlast(min(growth_medium),max(growth_medium),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for medium firm growth distribution")
 grid(5,5)
-hist(x, prob=T, breaks=c(seqlast(min(medium_growth),max(medium_growth),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for medium firm growth distribution")
+hist(x, prob=T, breaks=c(seqlast(min(growth_medium),max(growth_medium),0.1)), xlab="Growth",xlim = c(-3, 4), col="grey", main="Fit for medium firm growth distribution")
 curve(dnorm(x, fit_norm$estimate[1], fit_norm$estimate[2]), add=T,col = 1, lwd=2)
 curve(dcauchy(x, fit_cauchy$estimate[1], fit_cauchy$estimate[2]), add=T,col = 2, lwd=2)
 curve(dlaplace(x,  fit_laplace1$estimate[1] , fit_laplace1$estimate[2]), add=T, col=3, lwd=2)

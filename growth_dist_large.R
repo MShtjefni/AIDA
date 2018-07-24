@@ -1,31 +1,20 @@
+wdir <- ""
+dataDir <- "data/"
+packagesFile <- "packages.txt"
+#source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
+source(paste(wdir, "growth_rate_dist.R", sep="")) ### this also loads every needed package
+#loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
+
+small_growth <- groupByGrowth(small_firms)$Growth
+medium_growth <- groupByGrowth(medium_firms)$Growth
+large_growth <- groupByGrowth(large_firms)$Growth
+
 sample_size <-5000
-
-by_firm_large_ID <- as.numeric(by_firm_large$TaxID)
-by_firm_large_year <- as.numeric(by_firm_large$Year)
-by_firm_large_R <- as.numeric(by_firm_large$Revenue)
-by_firm_large_growth <- c()
-
-
-for (i in 2:length(by_firm_large_ID)) { 
-  if (by_firm_large_ID[i] != by_firm_large_ID[i-1]) next
-  if (by_firm_large_year[i] - by_firm_large_year[i-1] != 1) next
-  by_firm_large_growth[i] <- log(by_firm_large_R[i]/by_firm_large_R[i-1])
-}
-
-
-by_firm_large["Growth"]<-by_firm_large_growth
-
-growth_large_firms <-as.data.frame(by_firm_large)
-
-growth_large_firms <- growth_large_firms[sample(nrow(growth_large_firms)),] #shuffle
-
-
-large_growth <- growth_large_firms$Growth[!is.na(growth_large_firms$Growth)]
-growth_large <- sample(large_growth, sample_size)
+growth_large <- growth <- sample(large_growth, sample_size)
 
 ############################################################################################################
 fit_norm <- fitdist(growth_large, distr="norm", method="mle")
-fit_cauchy <- fitdist(large_growth, distr="cauchy", method="mle")
+fit_cauchy <- fitdist(growth_large, distr="cauchy", method="mle")
 fit_laplace1 <-fitdist(growth_large, distr = "laplace",  method = "mle", start=list(location=-0.1, scale=0.001))
 
 est1 <- c()
@@ -38,7 +27,7 @@ for (i in 1:1000) {
 }
 
 
-plotConfidInterv(est2, fit_cauchy$estimate[2], xlb="Scale parameter distribution")
+plotConfidInterv(est2, fit_cauchy$estimate[2], xtitle ="Scale parameter distribution")
 ############################################################################################################
 
 
@@ -46,26 +35,10 @@ plotConfidInterv(est2, fit_cauchy$estimate[2], xlb="Scale parameter distribution
 
 mean(growth_large)
 length(growth_large)
-shifted<- growth_large +10 # to fit distributions that require values to be positive
+shifted<- growth_large + abs(min(growth_large)) + .01 # to fit distributions that require values to be positive
 min(shifted)
 scaled <- (growth_large - min(growth_large) +0.000001) /(max(growth_large) - min(growth_large)+ 0.000002)
 #fit distributions that require values to be within ]0, 1[
-
-LL2 <- function(m, s) { 
-  -sum(dlaplace(growth_large, m, s, log=TRUE)) 
-}
-
-
-LL3 <- function(m, s) {
-  -sum(dpareto(shifted, m, s, log=TRUE)) # for dpareto, the first parameter is alpha, the second is xmin
-}
-
-#Powerlaw fit using the PowerLaw library
-# m_m = conpl$new(shifted)
-# est = estimate_xmin(m_m)
-# m_m$setXmin(est)
-# bs_p <- bootstrap_p(m_m, no_of_sims=1000, threads=8)
-# bs_p$p
 
 #Get an idea of the possible distribution for the empirical data
 descdist(growth_large, discrete = FALSE)
@@ -151,7 +124,7 @@ fit_log <- logspline(stats)
 gof_original <- gofstat(list(fit_norm, fit_cauchy,fit_logis, fit_laplace1))
 gof_shifted <- gofstat(list(fit_lnorm, fit_exp, fit_weib, fit_gamma))
 gof_scaled <-gofstat(fit_beta)
-gof_laplace<-c(AIC(fit_laplace), BIC(fit_laplace)) # BIC is NA. It can be retrieved
+gof_laplace<-c(AIC(fit_laplace1), BIC(fit_laplace1)) # BIC is NA. It can be retrieved
 gof_pareto<-c(AIC(fit_pareto), BIC(fit_pareto)) # using mle of {stats4} instead of mle2 
 
 
@@ -262,3 +235,4 @@ curve(plaplace(x,fit_laplace1$estimate[1], fit_laplace1$estimate[2]), add = T , 
 curve(plaplace(x,coef(fit_laplace2)[1], coef(fit_laplace2)[2]), add = T ,  cex=0.5,col="purple")
 
 ###########################################################################################################
+

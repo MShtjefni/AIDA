@@ -1,6 +1,7 @@
 wdir <- ""
-dataFile <- "data/aidat.RData"
-source(paste(wdir, "functions.R", sep=""))
+dataDir <- "data/"
+packagesFile <- "packages.txt"
+source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
 #loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
 
 "...Distributions fitting functions..."
@@ -409,21 +410,21 @@ save(man14, file=paste(wdir, "files/man14.RData", sep=""))
 man15<-sampleAndTest(subset(manufacturing, manufacturing$Year==2015))
 save(man15, file=paste(wdir, "files/man15.RData", sep=""))
 
-alim <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="alimentari"))
+alim <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="alimentari"))
 save(alim, file=paste(wdir, "files/alim.RData", sep=""))
-auto <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="autoveicoli"))
+auto <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="autoveicoli"))
 save(auto, file=paste(wdir, "files/auto.RData", sep=""))
-bev <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="bevande"))
+bev <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="bevande"))
 save(bev, file=paste(wdir, "files/bev.RData", sep=""))
-legno <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="legno"))
+legno <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="legno"))
 save(legno, file=paste(wdir, "files/legno.RData", sep=""))
-miner <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="minerali"))
+miner <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="minerali"))
 save(miner, file=paste(wdir, "files/miner.RData", sep=""))
-pc <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="computer"))
+pc <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="computer"))
 save(pc, file=paste(wdir, "files/pc.RData", sep=""))
-pelle <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="pelle"))
+pelle <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="pelle"))
 save(pelle, file=paste(wdir, "files/pelle.RData", sep=""))
-tess <- sampleAndTest(subset(manufacturing, manufacturing$Subsector=="tessile"))
+tess <- sampleAndTest(subset(manufacturing, manufacturing$SubSector=="tessile"))
 save(tess, file=paste(wdir, "files/tess.RData", sep=""))
 }
 
@@ -449,7 +450,7 @@ varName="mediaS"
 tryCatch(
   samples<-eval(parse(text=varName)),
 error = function(e) {
-  load(paste(wdir, "files/", varName, ".RData", sep=""))
+  load(paste(wdir, "files/distrResults/", varName, ".RData", sep=""))
   samples<<-eval(parse(text=varName))
   }
 )
@@ -579,8 +580,8 @@ for (i in distinctSampleSizes) {
   boots[paste(toString(i), 'E', sep="")]<-list(boot(sample,statistic = myStat, R = 1000))
 }
 
-tmp1<-plotConfidInterv(boots$`10000`$t[,2], myValue = boots$`10000`$t0[2], xtitle = 'bootstrapped xmins')
-tmp2<-plotConfidInterv(boots$`10000`$t[,2], myValue = boots$`10000`$t0[2], xtitle = 'bootstrapped alphas')
+tmp1<-plotConfidInterv(boots$`10000E`$t[,2], myValue = boots$`10000E`$t0[2], xtitle = 'bootstrapped xmins')
+tmp2<-plotConfidInterv(boots$`10000E`$t[,2], myValue = boots$`10000E`$t0[2], xtitle = 'bootstrapped alphas')
 plot_grid(tmp1,tmp2)
 
 # For fitdistr objects:

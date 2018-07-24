@@ -1,7 +1,8 @@
 #rm(list = ls()) #remove all the existing environment vars
 wdir <- ""
 dataDir <- "data/"
-source(paste(wdir, "functions.R", sep=""))
+packagesFile<-"pack2.txt"
+source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
 #loadDatasets(paste(wdir,dataFile,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
 
 "Basic Statistics and plots..."  
@@ -128,7 +129,7 @@ remove(melted,tmpDf,myFreq,data, by.geo)
 "Useful subsets regarding firms which have missing values for Employee column"
 {
   if(!exists("aidat"))
-    load(paste(wdir,dataFile,sep = ""))
+    load(paste0(wdir,dataDir,"aidat.R"))
 
 
   manufacturing <- subset(aidat,Ateco>=101100 & Ateco<=332009 & Year>2006 & Year<2016) #subset containing all the manufacturing firms from original dataset

@@ -1,3 +1,9 @@
+#wdir <- ""
+wdir <- ""
+dataDir <- "data/"
+packagesFile <- "packages.txt"
+source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
+
 sample_size <-5000
 
 restaurants_growth <- restaurants$Growth[!is.na(restaurants$Growth)]
@@ -10,38 +16,29 @@ growth_media <- sample(media_growth, sample_size)
 #############################################################################################################
 
 ############################################################################################################
-fit_norm <- fitdist(growth_media, distr="norm", method="mle")
-fit_cauchy <- fitdist(growth_media, distr="cauchy", method="mle")
-fit_laplace1 <-fitdist(growth_media, distr = "laplace",  method = "mle", start=list(location=-0.1, scale=0.001))
+fit_norm <- fitdist(growth_restaurants, distr="norm", method="mle")
+fit_cauchy <- fitdist(growth_restaurants, distr="cauchy", method="mle")
+fit_laplace1 <-fitdist(growth_restaurants, distr = "laplace",  method = "mle", start=list(location=-0.1, scale=0.001))
 
 est1 <- c()
 est2 <- c()
 
 for (i in 1:1000) {
-  fcauchy<-fitdist(sample(media_growth, sample_size), method="mle", distr = "cauchy")
+  fcauchy<-fitdist(sample(restaurants_growth, sample_size), method="mle", distr = "cauchy")
   est1[i] <- fcauchy$estimate[1]
   est2[i] <- fcauchy$estimate[2]
 }
 
 
-plotConfidInterv(est2, fit_cauchy$estimate[2], xlb="Scale parameter distribution")
+plotConfidInterv(est2, fit_cauchy$estimate[2], xtitle ="Scale parameter distribution")
 ############################################################################################################
 
 mean(growth_restaurants)
 length(growth_restaurants)
-shifted<- growth_restaurants +10 # to fit distributions that require values to be positive
+shifted<- growth_restaurants + abs(min(growth_restaurants)) + .01 # to fit distributions that require values to be positive
 min(shifted)
 scaled <- (growth_restaurants - min(growth_restaurants) +0.000001) /(max(growth_restaurants) - min(growth_restaurants)+ 0.000002)
 #fit distributions that require values to be within ]0, 1[
-
-LL2 <- function(m, s) { 
-  -sum(dlaplace(growth_restaurants, m, s, log=TRUE)) 
-}
-
-
-LL3 <- function(m, s) {
-  -sum(dpareto(shifted, m, s, log=TRUE)) # for dpareto, the first parameter is alpha, the second is xmin
-}
 
 
 #Get an idea of the possible distribution for the empirical data
@@ -128,7 +125,7 @@ fit_log <- logspline(stats)
 gof_original <- gofstat(list(fit_norm, fit_cauchy,fit_logis, fit_laplace1))
 gof_shifted <- gofstat(list(fit_lnorm, fit_exp, fit_weib, fit_gamma))
 gof_scaled <-gofstat(fit_beta)
-gof_laplace<-c(AIC(fit_laplace), BIC(fit_laplace)) # BIC is NA. It can be retrieved
+gof_laplace<-c(AIC(fit_laplace2), BIC(fit_laplace2)) # BIC is NA. It can be retrieved
 gof_pareto<-c(AIC(fit_pareto), BIC(fit_pareto)) # using mle of {stats4} instead of mle2 
 
 

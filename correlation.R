@@ -5,48 +5,43 @@
 
 #In contrast, linear regression specifies one variable as the independent variable and another 
 #as the dependent variable. The resultant model relates the variables with a linear relationship. 
+wdir <- ""
+dataDir <- "data/"
+packagesFile <- "pack2.txt"
+source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
+#loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
 
-ls() #Environment
-rm(list = ls()) #remove all variables
-ls() #check varaibles
-
-library(kimisc)
-library(corrplot)
-library(boot)
-library(ggplot2)
-library(Hmisc)
-library(ggpubr)
+#library(dplyr)
+#library(kimisc)
+#library(corrplot)
+#library(boot)
+#library(ggplot2)
+#library(Hmisc)
+#library(ggpubr)
 
 set.seed(1000)
 
-#INTERVALLO DI CONFIDENZA PER VEDERE SE SI INTRODUCONO BIAS
+##### AIDA ####
+##### CORRELATION ANALYSIS ####
+
+
+#Correlation CI to be sure we're avoiding bias due to the (sub)sample used
 correlazioni <-c()
 for(i in 1:1000){
-  samples = sample.rows(aida,100000,replace = FALSE) #sample di aida
+  print(paste("Iteration",i,"over 1000"))
+  samples = sample_n(aida,35000,replace = FALSE)
   samples=samples[c("E","R")]
-  cor.res.man <- boot(data=with(x.man, cbind(E, R)),statistic=cor.boot.man, R=10000)
+  corr<-cor(samples, use = "pairwise",method = "pearson")[1,2]
   correlazioni[i]<-corr
 }
 q = quantile(correlazioni,c(0.025,0.975))
-q
-corrEmp = 0.7147149
-plotConfidInterv(correlazioni,corrEmp)
-
-var()
-
-
-##### AIDA ####
-##### CORRELATION ANALYSIS ####
-#recupero il dataset di aida
-aida = get(load("aida2.RData")) #dataset aida
-#controllo i records per vedere se è il dataset giusto
-nrow(aida) #7.050.620
-
-x.aida = sample.rows(aida,35000,replace = FALSE) #sample di aida
+x.aida = sample_n(aida,35000,replace = FALSE) #sample di aida
 x.aida$R =round(x.aida$R)
 x.aida = x.aida[c("E","R")]
+corrEmp = cor(x.aida, use = "pairwise",method = "pearson")[1,2]
+plotConfidInterv(correlazioni,corrEmp)
 
-# PLOT DI E ED R C'E' UNA CORRELAZIONE LINEARE
+# A SORT OF LINEAR CORRELATION BETWEEN E AND R
 ggplot(data = x.aida, aes(x = E, y = R)) + 
   geom_point(color='blue') +
   geom_smooth(method = "lm", se = FALSE,color="red")+
@@ -57,30 +52,22 @@ ggplot(data = x.aida, aes(x = E, y = R)) +
   #labs(title = paste("Y =",signif(linearMod.aida$coef[[1]],5),"+",signif(linearMod.aida$coef[[2]], 5),"X"))
   #labs(title = "Plot Employee - Revenue", subtitle = "A subtitle")
 
-library("ggpubr")
-qqplot(x.aida$E)
-qqplot(x.aida$R)
+qqplot(x.aida$E, x.aida$R)
 
-b = rnorm(35000)
-lengr <- length(b)
-par = fitdist(b,"norm")
-y <- rnorm(lengr,par$estimate[1], par$estimate[2])
-qqplot(y,b, xlab="Theoretical Quantiles", ylab = "Empirical Quantiles")
 
 Employee = x.aida$E[1:5000]
 Revenue = x.aida$R[1:5000]
 ad.test(x.aida$E)
 ad.test(x.aida$R)
 
-#MATRICE DI CORRELAZIONE TRA E ED R DI TUTTO IL DATASET AIDA
-#Sia con Pearson che con Spearman, le correlazioni sono alte,
-#ma non è possibile effettuarla con Kendall per problemi computazionali
-corr.p.aida = cor(x.aida, use = "pairwise",method = "pearson") # r=0.3397841 NON ESEGUIRE DI NUOVO
+#CORRELATION MATRIX
+#With both Pearson and Spearman coefficients, correlation values are pretty high
+corr.p.aida = cor(x.aida, use = "pairwise",method = "pearson") # r=0.3397841 
 corr.p.aida
-corr.s.aida = cor(x.aida, use = "pairwise",method = "spearman") #rho=0.7157978 NON ESEGUIRE DI NUOVO
+corr.s.aida = cor(x.aida, use = "pairwise",method = "spearman") #rho=0.7157978
 corr.s.aida
 
-#PLOT CORRELAZIONI
+#PLOTTING
 par(mfrow=c(1,2))
 corrplot(corr.p.aida,method = "number", type="upper", order="hclust")
 title(main="Pearson",line = -2)
@@ -88,7 +75,7 @@ corrplot(corr.s.aida,method = "number", type="upper", order="hclust")
 title(main="Spearman",line= -2)
 par(mfrow=c(1,1))
 
-#TEST CORRELAZIONI 
+#HYPOTHESIS TESTING
 #per assicurarci che ci sia correlazione, dobbiamo effettuare un test
 #attraverso la funzione cor.test possiamo effettuare il test della correlazione tra le variabili
 # le ipotesi sono : H0: corr=0 ;H1: corr!=0
@@ -101,11 +88,8 @@ corr.p.test.aida #rifiutiamo H0 ed accettiamo H1 quindi c'è correlazione
 
 
 
-
-
-
 ##### CORRELATION BY YEARS ####
-prova = sample.rows(aida,35000,replace = FALSE) #sample di aida
+prova = sample_n(aida,35000,replace = FALSE)
 prova = prova[c("Year","E","R")]
 
 r<- by(prova, prova$Year, FUN = function(x) cor(x, use = "pairwise",method = "spearman"))
@@ -173,7 +157,6 @@ linearMod.aida <- lm(E ~ R, data=x.aida)
 
 print(linearMod.aida) #intercept e beta/slope
 
-# PLOT DI E ED R C'E' UNA CORRELAZIONE LINEARE
 ggplot(data = x.aida, aes(x = E, y = R)) + 
   geom_point(color='blue') +
   geom_smooth(method = "lm", se = FALSE,color="red")+
@@ -186,12 +169,10 @@ labs(title = "Plot Employee - Revenue", subtitle = "A subtitle")
 
 summary(linearMod.aida)
 
-#Dopo aver stimato il modello di regressione è necessario verificare che siano valide le ipotesi di 
-#base che abbiamo esposto in precedenza tramite opportuni test statistici
+#Testing the hypothesis for regression model
 
 {
-library(gvlma)
-library(nortest)
+#library(nortest)
 gvlma(linearMod.aida)
 
 #1-la media degli errori non sia significativamente diversa da zero attuando il test t di Student:
@@ -208,7 +189,6 @@ abline(0,1)
 #3-Proseguiamo con il verificare l’omoschedasticità dei residui utilizzando il test di Breusch-Pagan e
 #l’assenza di correlazione seriale tramite il test di Durbin-Watson. 
 #Entrambi i test sono largamente impiegati nelle analisi econometriche.
-library(lmtest)
 modello<-formula(linearMod.aida)
 bptest(modello,data=x.aida) #omoschedasticità
 dwtest(modello,data=x.aida) #autocorrelazione
@@ -231,7 +211,7 @@ CI.lm
 # setting seed to reproduce results of random sampling
 
 #STEP 1: TRAINING E TEST SET
-#d = sort(sample(nrow(x.aida), nrow(x.aida)*.8)) # select training sample, sort is optional 
+d = sort(sample(nrow(x.aida), nrow(x.aida)*.8)) # select training sample, sort is optional 
 train.aida = x.aida[d,] 
 test.aida = x.aida[-d,] 
 
@@ -256,14 +236,10 @@ min_max_accuracy.aida
 
 ##### MANUFACTURING ######
 ##### CORRELATION ANALYSIS ####
-#recupero il dataset di manufacturing
-manufacturing = get(load("manufacturing.RData"))
-#controllo se è il dataset giusto
-nrow(manufacturing)# 1.027.140 records
 
-#x.man = sample.rows(manufacturing,35000,replace = FALSE) #sample di manufacturing
+x.man = sample_n(manufacturing,35000,replace = FALSE) #sample di manufacturing
 #x.man$R =round(x.man$R)
-#x.man = x.man[c("E","R")]
+x.man = x.man[c("E","R")]
 
 # PLOT DI E ED R
 ggplot(data = x.man, aes(x = E, y = R)) + 
@@ -309,7 +285,7 @@ corr.p.test.man #rifiutiamo H0 ed accettiamo H1 quindi c'è correlazione
 
 
 ##### CORRELATION BY YEARS ####
-prova = sample.rows(manufacturing,35000,replace = FALSE) #sample di aida
+prova = sample_n(manufacturing,35000,replace = FALSE) #sample di aida
 prova = prova[c("Year","E","R")]
 
 r<- by(prova, prova$Year, FUN = function(x) cor(x, use = "pairwise",method = "spearman"))
@@ -376,12 +352,8 @@ for(i in a){
 
 #### MEDIA #####
 ##### CORRELATION ANALYSIS ####
-#recupero il dataset di aida
-#media = subset(aida,Ateco>=580000 & aida$Ateco<640000) #media 
-#controllo i records per vedere se è il dataset giusto
-nrow(media) #312.175
 
-#x.media = sample.rows(media,35000,replace = FALSE) #sample di aida
+x.media = sample_n(media,35000,replace = FALSE) #sample di aida
 #seleziono sono le variabili di nostro interesse. 
 #Spieghiamo che abbiamo scelto Employee e Revenue e perchè
 x.media$R =round(x.media$R)
@@ -432,12 +404,8 @@ corr.p.test.aida #rifiutiamo H0 ed accettiamo H1 quindi c'è correlazione
 
 #### RESTAURANT #####
 ##### CORRELATION ANALYSIS ####
-#recupero il dataset di aida
-restaurants = subset(aida,Ateco>=550000 & Ateco<570000) #restaurants (alloggio e ristoranti)
-#controllo i records per vedere se è il dataset giusto
-nrow(restaurants) #344.858
 
-#x.res = sample.rows(restaurants,35000,replace = FALSE) #sample di aida
+x.res = sample_n(restaurants,35000,replace = FALSE) #sample di aida
 #seleziono sono le variabili di nostro interesse. 
 #Spieghiamo che abbiamo scelto Employee e Revenue e perchè
 x.res$R =round(x.res$R)
@@ -522,37 +490,11 @@ par(mfrow=c(1,1))
 
 
 
-###### PLOT QUANTILE ######
-plotConfidInterv<-function(data, myValue=F, conf=.05) {
-  "plot(density(data))
-  abline(v=quantile(data, conf/2), col='red')
-  abline(v=quantile(data, 1-(conf/2)), col='red')"
-  # subset region and plot
-  plt<-ggplot(as.data.frame(data), aes(x=data)) + geom_density(colour = "black", size=1.2) 
-  d <- ggplot_build(plt)$data[[1]]
-  ypos1 <- d$y[match(x=T, d$x>=quantile(data,conf/2))]
-  ypos2 <- d$y[match(x=T, d$x>=quantile(data,1-conf/2))]
-  
-  plt <- plt + 
-    geom_area(data = subset(d, x >= quantile(data,.025) & x <= quantile(data,.975)), aes(x=x, y=y), fill="grey69") +
-    geom_segment(aes(x=quantile(data, .025), xend=quantile(data, .025), y=0, yend=ypos1), color="navyblue", size=1.2) + 
-    geom_segment(aes(x=quantile(data, .975), xend=quantile(data, .975), y=0, yend=ypos2), color="navyblue", size=1.2)
-  if(myValue) {
-    myColor='red'
-    if (myValue<quantile(data,conf/2) | myValue>quantile(data,1-conf/2))
-      myColor='red'
-    ypos <- d$y[match(x=T, d$x>=myValue)]
-    plt <- plt + geom_segment(aes(x=myValue, xend=myValue, y=0, yend=ypos), color=myColor, size=1.2)
-  }
-  plt + geom_density(colour = "black", size=1.2)
-  #return(d)
-}
-
 
 #AIDA
-#cor.boot.aida <- function(data, k) cor(data[k,],method = "spearman")[1,2]
-#cor.res.aida <- boot(data=with(x.aida, cbind(E, R)),statistic=cor.boot.aida, R=10000)
-#cor.res.aida$t0
+cor.boot.aida <- function(data, k) cor(data[k,],method = "spearman")[1,2]
+cor.res.aida <- boot(data=with(x.aida, cbind(E, R)),statistic=cor.boot.aida, R=10000)
+cor.res.aida$t0
 q = quantile(cor.res.aida$t,c(0.025,0.975))
 q
 plotConfidInterv(cor.res.aida$t,cor.res.aida$t0)
@@ -569,15 +511,15 @@ mean(cor.res.man$t0)
 
 
 #RESTAURANT
-#cor.boot.res <- function(data, k) cor(data[k,],method = "spearman")[1,2]
-#cor.res.res <- boot(data=with(x.res, cbind(E, R)),statistic=cor.boot.res, R=10000)
+cor.boot.res <- function(data, k) cor(data[k,],method = "spearman")[1,2]
+cor.res.res <- boot(data=with(x.res, cbind(E, R)),statistic=cor.boot.res, R=10000)
 cor.res.res$t0
 q = quantile(cor.res.res$t,c(0.025,0.975))
 q
 plotConfidInterv(cor.res.res$t,cor.res.res$t0)
 
 #MEDIA
-#cor.boot.media <- function(data, k) cor(data[k,],method = "spearman")[1,2]
+cor.boot.media <- function(data, k) cor(data[k,],method = "spearman")[1,2]
 cor.res.media <- boot(data=with(x.media, cbind(E, R)),statistic=cor.boot.media, R=10000)
 cor.res.media$t0
 q = quantile(cor.res.media$t,c(0.025,0.975))

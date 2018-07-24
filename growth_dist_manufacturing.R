@@ -1,22 +1,15 @@
+wdir <- ""
+dataDir <- "data/"
+packagesFile <- "packages.txt"
+#source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
+source(paste(wdir, "growth_rate_dist.R", sep="")) ### this also loads every needed package
+#loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
+
+
 sample_size <- 800
-length(mfc_growth)
-mean (mfc_growth)
-by_firm_manufacturing_ID <- as.numeric(by_firm_manufacturing$TaxID)
-by_firm_manufacturing_year <- as.numeric(by_firm_manufacturing$Year)
-by_firm_manufacturing_R <- as.numeric(by_firm_manufacturing$Revenue)
-by_firm_manufacturing_growth <- c()
-
-
-for (i in 2:length(by_firm_manufacturing_ID)) { 
-  if (by_firm_manufacturing_ID[i] != by_firm_manufacturing_ID[i-1]) next
-  if (by_firm_manufacturing_year[i] - by_firm_manufacturing_year[i-1] != 1) next
-  by_firm_manufacturing_growth[i] <- log(by_firm_manufacturing_R[i]/by_firm_manufacturing_R[i-1])
-}
-
-by_firm_manufacturing["Growth"]<-by_firm_manufacturing_growth
- 
-
-manufacturing_growth <-by_firm_manufacturing
+manufacturing_growth <- groupByGrowth(manufacturing)
+length(manufacturing_growth$Growth)
+mean (manufacturing_growth$Growth)
 
 manufacturing_2008 <- subset(manufacturing_growth, manufacturing_growth$Year=="2008" & !is.na(manufacturing_growth$Growth))
 
@@ -38,12 +31,14 @@ manufacturing_growth <- manufacturing_growth[sample(nrow(manufacturing_growth)),
 
 
 #########################################################################################################
-odd_years <- subset(by_firm_manufacturing, by_firm_manufacturing$Year %% 2 ==1)
-odd_years <- odd_years[, -c(8)]
+odd_years <- subset(manufacturing, manufacturing$Year %% 2 ==1)
+#odd_years <- odd_years[, -c(8)]
+by_firm_odd <- group_by(odd_years,TaxID, Year, SubSector, Region, GeoArea, Size)
+by_firm_odd <- summarize(by_firm_odd, Revenue=sum(R))
 
-odd_years_ID <- as.numeric(odd_years$TaxID)
-odd_years_year <- as.numeric(odd_years$Year)
-odd_years_R <- as.numeric(odd_years$Revenue)
+odd_years_ID <- as.numeric(by_firm_odd$TaxID)
+odd_years_year <- as.numeric(by_firm_odd$Year)
+odd_years_R <- as.numeric(by_firm_odd$Revenue)
 odd_years_growth <- c()
 
 for (i in 2:length(odd_years_ID)) { 
@@ -55,14 +50,15 @@ for (i in 2:length(odd_years_ID)) {
 
 ############################################################################################################
 
+even_years <- subset(manufacturing, manufacturing$Year %% 2 ==0)
+#even_years <- even_years[, -c(8)]
+by_firm_even <- group_by(even_years,TaxID, Year, SubSector, Region, GeoArea, Size)
+by_firm_even <- summarize(by_firm_even, Revenue=sum(R))
 
-even_years <- subset(by_firm_manufacturing, by_firm_manufacturing$Year %% 2 ==0)
-even_years <- even_years[, -c(8)]
 
-
-even_years_ID <- as.numeric(even_years$TaxID)
-even_years_year <- as.numeric(even_years$Year)
-even_years_R <- as.numeric(even_years$Revenue)
+even_years_ID <- as.numeric(by_firm_even$TaxID)
+even_years_year <- as.numeric(by_firm_even$Year)
+even_years_R <- as.numeric(by_firm_even$Revenue)
 even_years_growth <- c()
 
 for (i in 2:length(even_years_ID)) { 
@@ -84,24 +80,28 @@ growth_biannual <- sample(biannual_growth, sample_size)
 
 
 ############################################################################################################
-quinquennal <- subset(by_firm_manufacturing, by_firm_manufacturing$Year ==2010 | by_firm_manufacturing$Year ==2015)
-quinquennal <- quinquennal[, -c(8)]
+for(i in 1:4) {
+  quinquennal <- subset(manufacturing, manufacturing$Year ==2006+i | manufacturing$Year ==2006+i+5)
+  #quinquennal <- quinquennal[, -c(8)]
+  by_firm_quinquennal <- group_by(quinquennal,TaxID, Year, SubSector, Region, GeoArea, Size)
+  by_firm_quinquennal <- summarize(by_firm_quinquennal, Revenue=sum(R))
 
+  quinquennal_ID <- as.numeric(by_firm_quinquennal$TaxID)
+  quinquennal_year <- as.numeric(by_firm_quinquennal$Year)
+  quinquennal_R <- as.numeric(by_firm_quinquennal$Revenue)
+  quinquennal_growth <- c()
 
-quinquennal_ID <- as.numeric(quinquennal$TaxID)
-quinquennal_year <- as.numeric(quinquennal$Year)
-quinquennal_R <- as.numeric(quinquennal$Revenue)
-quinquennal_growth_10 <- c()
+  for (j in 2:length(quinquennal_ID)) { 
+    if (quinquennal_ID[j] != quinquennal_ID[j-1]) 
+      next
+    quinquennal_growth[j] <- log(quinquennal_R[j]/quinquennal_R[j-1])
+  }
 
-for (i in 2:length(quinquennal_ID)) { 
-  if (quinquennal_ID[i] != quinquennal_ID[i-1]) next
-  quinquennal_growth_10[i] <- log(quinquennal_R[i]/quinquennal_R[i-1])
+  for (j in 1:(nrow(quinquennal) - length(quinquennal_growth))) {
+    quinquennal_growth <- append(quinquennal_growth, NA)
+  }
+  assign(paste0("quinquennal_growth_",i+6), quinquennal_growth)
 }
-
-for (i in 1:(nrow(quinquennal) - length(quinquennal_growth_10))) {
-  quinquennal_growth_10 <- append(quinquennal_growth_10, NA)
-}
-
 #quinquennalgrowth7
 #quinquennalgrowth8
 #quinquennalgrowth9
@@ -125,12 +125,13 @@ growth_quinquennal <- sample(quinquennal_growth, sample_size)
 
 ############################################################################################################
 
-lag_years <- subset(by_firm_manufacturing, by_firm_manufacturing$Year ==2007 | by_firm_manufacturing$Year ==2015)
-lag_years <- lag_years[, -c(8)]
-
-lag_years_ID <- as.numeric(lag_years$TaxID)
-lag_years_year <- as.numeric(lag_years$Year)
-lag_years_R <- as.numeric(lag_years$Revenue)
+lag_years <- subset(manufacturing, manufacturing$Year ==2007 | manufacturing$Year ==2015)
+#lag_years <- lag_years[, -c(8)]
+by_firm_lag <- group_by(lag_years,TaxID, Year, SubSector, Region, GeoArea, Size)
+by_firm_lag  <- summarize(by_firm_lag, Revenue=sum(R))
+lag_years_ID <- as.numeric(by_firm_lag$TaxID)
+lag_years_year <- as.numeric(by_firm_lag$Year)
+lag_years_R <- as.numeric(by_firm_lag$Revenue)
 lag_years_growth <- c()
 
 for (i in 2:length(lag_years_ID)) { 
@@ -173,7 +174,7 @@ fit_cauchy_growth_biannual <- fitdist(biannual_growth, distr="cauchy", method="m
 fit_cauchy_growth_quinquennal <- fitdist(quinquennal_growth, distr="cauchy", method="mle")
 fit_cauchy_growth_lag_years <- fitdist(lag_years_growth, distr="cauchy", method="mle")
 
-fit_cauchy_manufacturing <- fitdist(growth_manufacturing, distr="cauchy", method="mle")
+fit_cauchy_manufacturing <- fitdist(mfc_growth, distr="cauchy", method="mle")
 fit_laplace1 <-fitdist(mfc_growth, distr = "laplace",  method = "mle", start=list(location=-0.1, scale=0.001))
 fit_logis <- fitdist(mfc_growth, distr="logis", method="mle")
 
@@ -187,14 +188,14 @@ for (i in 1:1000) {
 }
 
 
-plotConfidInterv(est2, fit_cauchy$estimate[2], xlb="Scale parameter distribution")
+plotConfidInterv(est2, fit_cauchy$estimate[2], xtitle ="Scale parameter distribution")
 
 
 ############################################################################################################
 
 mean(growth_manufacturing)
 length(growth_manufacturing)
-shifted<- growth_manufacturing +10 # to fit distributions that require values to be positive
+shifted<- growth_manufacturing + abs(min(growth_manufacturing)) + .01 # to fit distributions that require values to be positive
 min(shifted)
 scaled <- (growth_manufacturing - min(growth_manufacturing) +0.000001) /(max(growth_manufacturing) - min(growth_manufacturing)+ 0.000002)
 
@@ -205,20 +206,6 @@ skewness(growth_manufacturing) # positive skewness -> the tail on the right side
 
 #fit distributions that require values to be within ]0, 1[
 
-LL2 <- function(m, s) {
-  -sum(dlaplace(growth_manufacturing, m, s, log=T))
-}
-
-
-LL3 <- function(m, s) {
-  -sum(dpareto(shifted ,m, s, log=T)) # for dpareto, the first parameter is alpha, the second is xmin
-}
-#Powerlaw fit using the PowerLaw library
-# m_m = conpl$new(shifted)
-# est = estimate_xmin(m_m)
-# m_m$setXmin(est)
-# bs_p <- bootstrap_p(m_m, no_of_sims=1000, threads=8)
-# bs_p$p
 
 #Get an idea of the possible distribution for the empirical data
 descdist(growth_manufacturing, discrete = FALSE)
@@ -245,56 +232,6 @@ plot(profile(fit_laplace2)) # plots profile (confidence intervals) of the parame
 boot <- bootdist(fit_cauchy_manufacturing, bootmethod = "param", niter = 1000) #uses parametric bootsrap to generate 
 # 1000 samples and compute their parameters according to the given fitted distribution
 boot$CI[,-1] # returns the 95% bootstrap CIs for all parameters
-
-######################################################################################################################
-#GG plot for confidence intervals
-plotConfidInterv<-function(data, myValue=F, conf=.05) {
-  "plot(density(data))
-  abline(v=quantile(data, conf/2), col='red')
-  abline(v=quantile(data, 1-(conf/2)), col='red')"
-  # subset region and plot
-  plt<-ggplot(as.data.frame(data), aes(x=data)) + geom_density(colour = "black", size=0.5) 
-  d <- ggplot_build(plt)$data[[1]]
-  ypos1 <- d$y[match(x=T, d$x>=quantile(data,conf/2))]
-  ypos2 <- d$y[match(x=T, d$x>=quantile(data,1-conf/2))]
-  
-  plt <- plt + 
-    geom_area(data = subset(d, x >= quantile(data,.025) & x <= quantile(data,.975)), aes(x=x, y=y), fill="red", alpha=0.3) +
-    geom_segment(aes(x=quantile(data, .025), xend=quantile(data, .025), y=0, yend=ypos1), color="navyblue", size=0.5) + 
-    geom_segment(aes(x=quantile(data, .975), xend=quantile(data, .975), y=0, yend=ypos2), color="navyblue", size=0.5)
-  if(myValue) {
-    myColor='red'
-    if (myValue<quantile(data,conf/2) | myValue>quantile(data,1-conf/2))
-      myColor='red'
-    ypos <- d$y[match(x=T, d$x>=myValue)]
-    plt <- plt + geom_segment(aes(x=myValue, xend=myValue, y=0, yend=ypos), color=myColor, size=0.8)
-  }
-  plt + geom_density(colour = "black", size=0.5)
-  #return(d)
-}
-
-plotConfidInterv2<-function(data, myValue=F, conf=.05, title, xlb) {
-  "plot(density(data))
-  abline(v=quantile(data, conf/2), col='red')
-  abline(v=quantile(data, 1-(conf/2)), col='red')"
-  # subset region and plot
-  plt<-ggplot(as.data.frame(data), aes(x=data)) + geom_density(colour = "black", size=0.8) + xlab(xlb) + ggtitle(title)
-  d <- ggplot_build(plt)$data[[1]]
-  ypos1 <- d$y[match(x=T, d$x>=quantile(data,1-conf))]
-  
-  plt <- plt + 
-    geom_area(data = subset(d, x <= quantile(data,.95)), aes(x=x, y=y), fill="red", alpha=0.3) +
-    geom_segment(aes(x=quantile(data, .95), xend=quantile(data, .95), y=0, yend=ypos1), color="navyblue", size=0.8)
-  if(myValue) {
-    myColor='red'
-    if (myValue>quantile(data,1-conf))
-      myColor='red'
-    ypos2 <- d$y[match(x=T, d$x>=myValue)]
-    plt <- plt + geom_segment(aes(x=myValue, xend=myValue, y=0, yend=ypos2), color=myColor, size=0.8)
-  }
-  plt + geom_density(colour = "black", size=0.5)
-  #return(d)
-}
 
 ########################################################################################################################
 
@@ -359,10 +296,10 @@ fit_log <- logspline(stats)
              , fit_log
 )
 
-plotConfidInterv2(stats,ks.test(growth_manufacturing
+plotConfidInterv(stats,ks.test(growth_manufacturing
                                 , "pcauchy"
                                 , fit_cauchy_manufacturing$estimate[1]
-                                , fit_cauchy_manufacturing$estimate[2])$statistic, title="Log spline density of D-statistic for sample size=1000", xlb="D")
+                                , fit_cauchy_manufacturing$estimate[2])$statistic, xtitle ="D-Statistics")
 ##############################################################################
 
 # Take a look at the AICs and BICs among other gof statistics
@@ -496,12 +433,12 @@ symmetry.test(sample(growth_2013, 16000))
 symmetry.test(sample(growth_2014, 16000))
 symmetry.test(sample(growth_2015, 16000))
 #Test data for normality
-qqnorm(growth_manufacturing_2008) #visually the distribution is far from normal
-qqline(growth_manufacturing_2008)
+qqnorm(growth_2008) #visually the distribution is far from normal
+qqline(growth_2008)
 shapiro.test(growth_manufacturing) # p-value close to 0 so we reject the null hypothesis
 
 #Test of mean, non-normal data, distribution free but has to be symmetrical:
-wilcox.test(growth_manufacturing_2008, mu=0 , conf.int = T) # We reject H0 i.e. the true mean is != 0
+wilcox.test(growth_2008, mu=0 , conf.int = T) # We reject H0 i.e. the true mean is != 0
 
 #Very large sample size, we can take advantage of the clt by performing a z-test:
  # Again we reject H0
@@ -518,24 +455,27 @@ samplemean <- function(x, i) {
 
 est<-as.numeric(fit_cauchy_manufacturing$estimate)
 
-rg <- function(growth_manufacturing_2008, mle) {
-  out <- rcauchy(length(growth_manufacturing_2008), mle[1], mle[2])
+rg <- function(data, mle) {
+  out <- rcauchy(length(data), mle[1], mle[2])
   out
 }
 
-p_boot = boot(growth_manufacturing_2008, samplemean, R=1000, sim="parametric", ran.gen = rg , mle=est)
+p_boot = boot(growth_2008, samplemean, R=1000, sim="parametric", ran.gen = rg , mle=est)
 
 quantile(p_boot$t, c(0.025, 0.975)) # we cannot reject the null hypothesis
 plot(p_boot)
 p_boot$t0
 
-mean(growth_manufacturing_2008)
+mean(growth_2008)
 #bootstrap p-value approximation:
 #centered:
 mean(abs(p_boot$t - p_boot$t0) >= abs(p_boot$t0 - 0)) # we can see the p-value is very high 
 
 #uncentered (practically the same result):
 mean(abs(p_boot$t) >= 0) # we cannot reject H0, so the mean is =0
+" install.packages("devtools", dependencies = TRUE)
+devtools::install_github('alanarnholt/BSDA') "
+
 z.test(growth_2015, sigma.x=sd(growth_2015), mu=0)
 
 #Non-parametric bootstrapping:
@@ -546,7 +486,7 @@ samplemean <- function(x, i) {
 np_boot = boot(growth_2015, samplemean, R=1000, sim="ordinary")
 # derive ci
 quantile(np_boot$t, c(0.025, 0.975)) # we reject the null hypothesis
-plotConfidInterv(np_boot$t, np_boot$t0, title="Bootstrapped mean distribution", xlb = "Mean")
+plotConfidInterv(np_boot$t, np_boot$t0, xtitle = "Bootstrapped Mean")
 # or like this
 boot.ci(np_boot, type = "norm")
 #bootstrap p-value approximation
@@ -564,10 +504,10 @@ mean(abs(np_boot$t - np_boot$t0) >= abs(np_boot$t0 - 0)) # the p-value is practi
 z.test(growth_2008, sigma.x=sd(growth_2008), growth_2009, sigma.y=sd(growth_2009), mu=0)
 
 #Wilcox test: we reject H0
-wilcox.test(growth_manufacturing_2008, growth_manufacturing_2009, mu=0)
+wilcox.test(growth_2008, growth_2009, mu=0)
 
 #t-test, unequal variances: again we reject H0
-t.test(growth_manufacturing_2008, growth_manufacturing_2009, mu=0)
+t.test(growth_2008, growth_2009, mu=0)
 
 
 #Non-parametric bootstrapping:
@@ -588,16 +528,16 @@ quantile(np_boot$t, c(0.025, 0.975)) # we reject the null hypothesis, so there i
 #centered distribution of parameters:
 mean(abs(np_boot$t - np_boot$t0) >= abs(np_boot$t0 - 0)) # the p-value is practically 0
 
-plotConfidInterv(np_boot$t, np_boot$t0, title="Bootstrapped mean difference distribution", xlb = "Mean difference")
+plotConfidInterv(np_boot$t, np_boot$t0, xlb = "Bootstrapped Mean difference")
 
 
 #Parametric bootstrapping:
 #The good old fashioned way
 mean_differences <- replicate(1000, {
-  r1 <- rcauchy(length(growth_manufacturing_2008)
+  r1 <- rcauchy(length(growth_2008)
                , fit_cauchy_manufacturing$estimate[1] # Whatever the estimated cauchy parameters for the 2008 growth are
                , fit_cauchy_manufacturing$estimate[2])
-  r2<- rcauchy(length(growth_manufacturing_2009)
+  r2<- rcauchy(length(growth_2009)
                , fit_cauchy_manufacturing$estimate[1]  # Whatever the estimated cauchy parameters for the 2009 growth are
                , fit_cauchy_manufacturing$estimate[2])
   return (mean(r1) - mean(r2))
@@ -610,7 +550,7 @@ mean(abs(mean_differences) >= 0)
 ####################################################################################################
 
 #A symmetry test
-symmetry.test(growth_manufacturing_2008)
+symmetry.test(growth_2008)
 
 ###################################################################################################
 #Regression
@@ -631,9 +571,11 @@ plot(fit_growth)
 
 bptest(fit_growth)
 
-
+sorted_growth_2008<-sort(growth_2008)
+sorted_growth_2009<-sort(growth_2009)
 #predict(fit, data.frame(x = c(4, 5, 6)))
 plot(sorted_growth_2008, sorted_growth_2009, ylab="Growth in 2009", xlab="Growth in 2008", main="Simple linear regression model")
+
 
 lines(sorted_growth_2008,fit_growth$fitted.values,lwd=1, col="red")
 
@@ -646,3 +588,4 @@ fit_growth$df.residual
 length(sorted_growth_2008)
 rse <- sqrt( sum(residuals(fit_growth)^2) / fit_growth$df.residual ) 
 1-rse
+

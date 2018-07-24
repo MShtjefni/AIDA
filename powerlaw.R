@@ -1,7 +1,7 @@
 wdir <- ""
 dataDir <- "data/"
 packagesFile <- "packages.txt"
-source(paste(wdir, "functions.R", sep=""))
+source(paste(wdir, "functions.R", sep="")) ### this also loads every needed package
 loadDatasets(paste(wdir,dataDir,sep="")) ###USE THIS IF YOU CURRENTLY HAVEN'T DATASETS IN WORKSPACE
 
 
@@ -140,7 +140,7 @@ for (name in as.character(c(500, 2000, 10000)))  {
 # HOW DOES THE DISTRIBUTION OF ALPHA CHANGES BY INCREASING XMIN
 {
 alphasByXMin<-list()
-distinctXMins<-c(1, 5)
+distinctXMins<-c(1, 5, 50, 1000)
 for(xmin in distinctXMins) {
   smplSize<-50000
   alphasByXMin[[toString(xmin)]]<-c()
@@ -275,7 +275,7 @@ for(size in c("Small","Medium","Large")) {
 p=0
 i<-1
 size<-'Medium'
-while(p<.02) {
+while(p<.01) {
   mySample<-samplesSize[[size]][[i]]
   x<-mySample$dat
   xmin<-mySample$xmin
@@ -374,7 +374,7 @@ xmin<-round(getMode(allXMinsE[[as.character(smplSize)]]))
 #IN ORDER TO ENSURE WE'RE USING AN XMIN THAT IS "GOOD" FOR EACH OF THEM
 for (y in (2007:2015)) {
   allXMinsE[[toString(y)]]<-allAlphasE[[toString(y)]]<-c()
-  for (i in(1:10)) {
+  for (i in(1:1000)) {
     print(paste("Iteration", i, "over 1000 for year ",y))
     s<-sample(subset(aida$E, aida$Year==y), smplSize)
     pl<-displ$new(s+1)
