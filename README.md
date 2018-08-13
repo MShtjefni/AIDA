@@ -1,5 +1,5 @@
 # AIDA
-This project consists of a <b>Statistical purpose analysis on the Italian firms</b>, it borns with an educational aim for the 
+This project consists of a <b>Statistical purpose analysis on the Italian firms</b>, with an educational aim for the 
 [Statistical Methods for Data Science](http://didawiki.cli.di.unipi.it/doku.php/mds/smd/start) course(A.Y. 2017-2018) 
 at the Università di Pisa.
 
